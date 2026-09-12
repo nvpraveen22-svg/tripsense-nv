@@ -211,6 +211,52 @@ export interface AiSeasonalContent {
   closedNow: string[];
 }
 
+export interface RoadEstimate {
+  distance_km: number;
+  drive_hours: number;
+  fuel_cost_min: number;
+  fuel_cost_max: number;
+  toll_estimate: number;
+  best_route: string;
+  rest_stops: string[];
+  tips: string;
+}
+
+export interface RailEstimate {
+  journey_hours_min: number;
+  journey_hours_max: number;
+  sleeper_fare_min: number;
+  sleeper_fare_max: number;
+  ac3_fare_min: number;
+  ac3_fare_max: number;
+  ac2_fare_min: number;
+  ac2_fare_max: number;
+  popular_trains: string[];
+  nearest_station_destination: string;
+  tips: string;
+}
+
+export interface FlightEstimate {
+  duration_hours_min: number;
+  duration_hours_max: number;
+  economy_fare_min: number;
+  economy_fare_max: number;
+  nearest_airport_origin: string;
+  nearest_airport_destination: string;
+  airlines: string[];
+  tips: string;
+}
+
+export interface TravelEstimate {
+  id: string;
+  destination_id: string;
+  origin_city: string;
+  road_json: RoadEstimate;
+  rail_json: RailEstimate;
+  flight_json: FlightEstimate;
+  generated_at: string;
+}
+
 export interface TollRoute {
   id: string;
   destination_id: string;
