@@ -42,16 +42,16 @@ const destinationQueries = {
   coorg: "Coorg coffee plantation misty hills India",
   ooty: "Ooty tea garden Nilgiris India",
   kodaikanal: "Kodaikanal lake hills Tamil Nadu India",
-  araku: "Araku valley tribal Andhra Pradesh India",
+  araku: "Araku Valley India",
   vizag: "Visakhapatnam beach Andhra Pradesh India",
-  pondicherry: "Pondicherry French colony promenade India",
+  pondicherry: "Pondicherry France India",
 };
 
 const attractionQueries = {
   "Syntheri Rocks": "rock formation river Karnataka India",
-  "Kavala Caves": "limestone caves stalactites India",
+  "Kavala Caves": "limestone cave",
   "Dandeli Wildlife Sanctuary": "wildlife jungle forest India tiger",
-  "Supa Dam": "dam reservoir Karnataka India",
+  "Supa Dam": "dam reservoir",
   "Ulavi Forest": "dense jungle forest Karnataka India",
   "Kali River": "river jungle western ghats India",
   "Crocodile Point": "river nature Karnataka India",
@@ -60,7 +60,7 @@ const attractionQueries = {
 
 const hotelQueries = {
   "Evolve Back Kali Adventure Camp": "luxury jungle resort tented camp India",
-  "The Bison Resort": "forest resort wildlife India",
+  "The Bison Resort": "jungle resort India",
   "Old Magazine House": "heritage bungalow forest guesthouse India",
   "Jungle Retreat Dandeli": "jungle resort riverside India",
   "Dandeli Jungle Camp": "camping forest bonfire riverside India",
