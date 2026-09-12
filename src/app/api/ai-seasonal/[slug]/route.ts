@@ -55,7 +55,7 @@ interface SeasonalDestination {
   best_months: string[] | null;
   okay_months: string[] | null;
   avoid_months: string[] | null;
-  month_notes: Record<string, string> | null;
+  month_notes: string | null; // JSON-encoded {"range label": "note"}, stored as text
 }
 
 type ResolveResult =
@@ -162,7 +162,7 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
 
   const monthContext =
     destination.best_months || destination.okay_months || destination.avoid_months
-      ? `\nSeasonal reference for this destination: best months ${(destination.best_months ?? []).join(", ") || "n/a"}; okay months ${(destination.okay_months ?? []).join(", ") || "n/a"}; avoid months ${(destination.avoid_months ?? []).join(", ") || "n/a"}. Notes: ${destination.month_notes ? JSON.stringify(destination.month_notes) : "n/a"}.`
+      ? `\nSeasonal reference for this destination: best months ${(destination.best_months ?? []).join(", ") || "n/a"}; okay months ${(destination.okay_months ?? []).join(", ") || "n/a"}; avoid months ${(destination.avoid_months ?? []).join(", ") || "n/a"}. Notes: ${destination.month_notes ?? "n/a"}.`
       : "";
 
   const prompt = `You are a practical, honest Indian travel advisor. It is currently ${currentMonthLabel}. Give a seasonal snapshot for a traveler considering ${destination.name}, ${destination.state}, India, for a trip sometime between now and ${windowLabel} (the next 60 days).

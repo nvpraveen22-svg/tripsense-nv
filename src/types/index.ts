@@ -20,7 +20,7 @@ export interface Destination {
   best_months: string[] | null;
   okay_months: string[] | null;
   avoid_months: string[] | null;
-  month_notes: Record<string, string> | null;
+  month_notes: string | null; // JSON-encoded {"range label": "note"}, stored as text
   history_culture: string | null;
 }
 

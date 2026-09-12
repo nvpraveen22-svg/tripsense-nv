@@ -67,6 +67,16 @@ export function parseCostRange(text: string | null): CostRange | null {
   };
 }
 
+export function parseMonthNotes(raw: string | null): Record<string, string> {
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    return typeof parsed === "object" && parsed !== null ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
 export function parseOrigin(description: string | null): string {
   const match = /^From ([^:]+):\s*/.exec(description ?? "");
   return match ? match[1].trim() : "Hyderabad";

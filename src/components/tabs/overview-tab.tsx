@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DESTINATION_HIGHLIGHTS, type QuickStat } from "@/lib/destination-highlights";
 import { useDestinationTable } from "@/hooks/use-destination-table";
-import { parseOrigin } from "@/lib/parse-notes";
+import { parseOrigin, parseMonthNotes } from "@/lib/parse-notes";
 import { languageForState, budgetLevelFromHotelPrices } from "@/lib/state-language";
 import { MonthCalendar } from "@/components/tabs/month-calendar";
 import { SeasonalSnapshot } from "@/components/tabs/seasonal-snapshot";
@@ -238,7 +238,7 @@ export function OverviewTab({ destination }: OverviewTabProps) {
               bestMonths={destination.best_months ?? []}
               okayMonths={destination.okay_months ?? []}
               avoidMonths={destination.avoid_months ?? []}
-              monthNotes={destination.month_notes ?? {}}
+              monthNotes={parseMonthNotes(destination.month_notes)}
             />
           </CardContent>
         </Card>
