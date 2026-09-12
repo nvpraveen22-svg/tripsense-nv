@@ -67,6 +67,11 @@ export function parseCostRange(text: string | null): CostRange | null {
   };
 }
 
+export function parseOrigin(description: string | null): string {
+  const match = /^From ([^:]+):\s*/.exec(description ?? "");
+  return match ? match[1].trim() : "Hyderabad";
+}
+
 export function parseTaxiAddon(text: string | null): number {
   if (!text) return 0;
   const match = /plus ₹(\d[\d,]*)/.exec(text);

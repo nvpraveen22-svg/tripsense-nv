@@ -3,14 +3,14 @@
 import { useMemo, useState } from "react";
 import { Plane, TrainFront, Bus, Car, Clock, Landmark, Lightbulb } from "lucide-react";
 import { useDestinationTable } from "@/hooks/use-destination-table";
-import { extractLabeled, formatInr, parseTollBreakdown } from "@/lib/parse-notes";
+import { extractLabeled, formatInr, parseOrigin, parseTollBreakdown } from "@/lib/parse-notes";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { TabState } from "@/components/tabs/tab-state";
 import { cn } from "@/lib/utils";
-import type { HowToReach, TransportMode } from "@/types";
+import type { TransportMode } from "@/types";
 
 interface HowToReachTabProps {
   destinationId: string;
@@ -23,11 +23,6 @@ const MODES: { value: TransportMode; label: string; emoji: string; icon: typeof 
   { value: "air", label: "By Air", emoji: "✈️", icon: Plane },
   { value: "bus", label: "By Bus", emoji: "🚌", icon: Bus },
 ];
-
-function parseOrigin(row: HowToReach): string {
-  const match = /^From ([^:]+):\s*/.exec(row.description ?? "");
-  return match ? match[1].trim() : "Hyderabad";
-}
 
 function stripOriginPrefix(text: string | null): string {
   if (!text) return "";
@@ -57,7 +52,7 @@ export function HowToReachTab({ destinationId, originCity }: HowToReachTabProps)
     [routes, mode]
   );
   const roadOrigins = useMemo(
-    () => routes.filter((r) => r.mode === "road").map(parseOrigin),
+    () => routes.filter((r) => r.mode === "road").map((r) => parseOrigin(r.description)),
     [routes]
   );
   const [calcOrigin, setCalcOrigin] = useState<string | null>(null);
@@ -111,7 +106,7 @@ export function HowToReachTab({ destinationId, originCity }: HowToReachTabProps)
                 <CardContent className="flex flex-col gap-1.5 pt-1">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-sm font-medium text-foreground">
-                      From {parseOrigin(route)}
+                      From {parseOrigin(route.description)}
                     </span>
                     {route.duration_from_hyderabad && (
                       <Badge variant="secondary" className="gap-1">

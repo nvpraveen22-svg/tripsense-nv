@@ -14,6 +14,7 @@ import {
   extractLabeled,
   formatInr,
   parseCostRange,
+  parseOrigin,
   parseTaxiAddon,
 } from "@/lib/parse-notes";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,7 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import type { Destination, HowToReach } from "@/types";
+import type { Destination } from "@/types";
 import { Info } from "lucide-react";
 
 interface BudgetTabProps {
@@ -44,11 +45,6 @@ const FALLBACK_PER_PERSON: Record<TravelMode, number> = {
 function findOriginOption(city: string): OriginOption {
   if (city === "Hyderabad" || city === "Bangalore" || city === "Mumbai") return city;
   return "Other";
-}
-
-function parseOrigin(row: HowToReach): string {
-  const match = /^From ([^:]+):\s*/.exec(row.description ?? "");
-  return match ? match[1].trim() : "Hyderabad";
 }
 
 export function BudgetTab({ destination, originCity }: BudgetTabProps) {
@@ -102,7 +98,7 @@ export function BudgetTab({ destination, originCity }: BudgetTabProps) {
       }
     } else {
       const row = howToReach.find(
-        (r) => r.mode === travelMode && parseOrigin(r) === origin
+        (r) => r.mode === travelMode && parseOrigin(r.description) === origin
       );
       if (row) {
         const { value: costText } = extractLabeled(row.description, "Estimated cost");

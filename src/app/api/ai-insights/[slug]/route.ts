@@ -99,6 +99,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     .from("ai_insights")
     .select("content, generated_at, prompt_version")
     .eq("destination_id", destination.id)
+    .eq("type", "general")
     .maybeSingle();
 
   if (error) {
@@ -229,11 +230,12 @@ Produce:
     const { error: upsertError } = await supabase.from("ai_insights").upsert(
       {
         destination_id: destination.id,
+        type: "general",
         content: JSON.stringify(content),
         generated_at: generatedAt,
         prompt_version: PROMPT_VERSION,
       },
-      { onConflict: "destination_id" }
+      { onConflict: "destination_id,type" }
     );
 
     if (upsertError) {

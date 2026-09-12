@@ -20,18 +20,11 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
+import { daysAgoLabel } from "@/lib/format-time";
 import type { AiInsightsContent, InsightActivityTag } from "@/types";
 
 interface InsightsTabProps {
   destinationSlug: string;
-}
-
-function daysAgoLabel(iso: string): string {
-  const diffMs = Date.now() - new Date(iso).getTime();
-  const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  if (days <= 0) return "today";
-  if (days === 1) return "1 day ago";
-  return `${days} days ago`;
 }
 
 function ActivityTagList({

@@ -17,6 +17,11 @@ export interface Destination {
   status: string | null;
   last_updated: string;
   created_at: string;
+  best_months: string[] | null;
+  okay_months: string[] | null;
+  avoid_months: string[] | null;
+  month_notes: Record<string, string> | null;
+  history_culture: string | null;
 }
 
 export interface Attraction {
@@ -189,9 +194,21 @@ export interface AiInsightsContent {
 export interface AiInsights {
   id: string;
   destination_id: string;
-  content: string; // JSON-stringified AiInsightsContent
+  content: string; // JSON-stringified AiInsightsContent | AiSeasonalContent
   generated_at: string;
   prompt_version: number;
+  type: "general" | "seasonal";
+}
+
+export type SeasonalRecommendation = "go_now" | "wait" | "book_ahead";
+
+export interface AiSeasonalContent {
+  recommendation: SeasonalRecommendation;
+  recommendationReason: string;
+  upcomingEvents: { name: string; timing: string }[];
+  currentSeasonTips: string[];
+  openNow: string[];
+  closedNow: string[];
 }
 
 export interface TollRoute {
