@@ -56,6 +56,64 @@ const attractionQueries = {
   "Kali River": "river jungle western ghats India",
   "Crocodile Point": "river nature Karnataka India",
   "Anshi National Park": "national park forest wildlife India",
+
+  // Goa
+  "Baga Beach": "Baga beach Goa",
+  "Basilica of Bom Jesus": "Bom Jesus Basilica Goa",
+  "Dudhsagar Falls": "Dudhsagar waterfall Goa",
+  "Fort Aguada": "Fort Aguada Goa",
+  "Anjuna Flea Market": "Anjuna flea market Goa",
+
+  // Gokarna
+  "Om Beach": "Om beach Gokarna",
+  "Kudle Beach": "Kudle beach Gokarna",
+  "Mirjan Fort": "old fort India ruins",
+  "Half Moon Beach": "secluded beach cliff India",
+  "Yana Caves": "black rock cave formation",
+
+  // Coorg
+  "Abbey Falls": "Abbey falls Coorg",
+  "Raja's Seat": "Coorg viewpoint sunset",
+  "Dubare Elephant Camp": "elephant river camp India",
+  "Namdroling Golden Temple": "Namdroling monastery Bylakuppe",
+  "Talacauvery": "Talacauvery Coorg hills",
+  "Mandalpatti Viewpoint": "Coorg hills viewpoint",
+
+  // Ooty
+  "Ooty Lake": "Ooty lake boating",
+  "Government Botanical Garden": "botanical garden Ooty",
+  "Nilgiri Mountain Railway": "Nilgiri toy train",
+  "Doddabetta Peak": "Doddabetta peak Ooty",
+  "Tea Museum & Factory": "tea plantation factory India",
+
+  // Kodaikanal
+  "Kodaikanal Lake": "Kodaikanal lake",
+  "Coaker's Walk": "Kodaikanal cliff walk",
+  "Pillar Rocks": "Pillar rocks Kodaikanal",
+  "Bryant Park": "botanical garden flowers India",
+  "Guna Caves (Devil's Kitchen)": "rock cave forest India",
+
+  // Araku Valley
+  "Borra Caves": "Borra caves India",
+  "Araku Tribal Museum": "tribal museum India",
+  "Katiki Waterfalls": "Katiki waterfall Araku",
+  "Araku Valley Coffee Plantations": "coffee plantation India hills",
+  "Padmapuram Gardens": "terraced garden India hills",
+
+  // Vizag
+  Kailasagiri: "Kailasagiri hill park Vizag",
+  "Ramakrishna Beach (RK Beach)": "RK beach Visakhapatnam",
+  "INS Kursura Submarine Museum": "submarine museum India",
+  "Rushikonda Beach": "Rushikonda beach Vizag",
+  "TU 142 Aircraft Museum": "aircraft museum India",
+  "Yarada Beach": "hilltop beach India coast",
+
+  // Pondicherry
+  "Promenade Beach (Rock Beach)": "Pondicherry promenade beach",
+  Auroville: "Auroville Matrimandir India",
+  "French Quarter (White Town)": "Pondicherry French quarter",
+  "Basilica of the Sacred Heart of Jesus": "gothic church India",
+  "Paradise Beach": "Paradise beach Pondicherry",
 };
 
 const hotelQueries = {
@@ -64,6 +122,54 @@ const hotelQueries = {
   "Old Magazine House": "heritage bungalow forest guesthouse India",
   "Jungle Retreat Dandeli": "jungle resort riverside India",
   "Dandeli Jungle Camp": "camping forest bonfire riverside India",
+
+  // Goa
+  "Taj Fort Aguada Resort & Spa": "luxury beach resort India",
+  "W Goa": "beach resort pool Goa",
+  "Fairfield by Marriott Goa": "hotel pool Goa",
+  "Zostel Goa": "backpacker hostel Goa",
+
+  // Gokarna
+  SwaSwara: "beach resort wellness India",
+  "Kudle Beach Resort": "beach resort Gokarna",
+  "Gokarna International Beach Resort": "beach resort pool India",
+  "Namaste Cafe & Rooms": "beach shack cafe India",
+
+  // Coorg
+  "Taj Madikeri Resort & Spa": "luxury resort coffee estate",
+  "Orange County Coorg": "plantation resort Coorg",
+  "Coorg Wilderness Resort": "forest resort Coorg",
+  "Coorg Cliffs Resort": "hillside resort Coorg",
+
+  // Ooty
+  "The Savoy (IHCL SeleQtions)": "heritage hotel garden India",
+  "Sterling Ooty Elk Hill": "hillside hotel Ooty",
+  "Fortune Resort Sullivan Court": "hotel Ooty hills",
+  "YWCA Anandagiri": "budget guesthouse hills India",
+
+  // Kodaikanal
+  "The Carlton (CGH Earth)": "lakeside heritage hotel India",
+  "Sterling Kodai Lake": "hillside hotel Kodaikanal",
+  "Villa Retreat": "hillside hotel valley view",
+  "Cloud Street Backpackers": "hostel hills India",
+
+  // Araku Valley
+  "Haritha Valley Resort (APTDC)": "valley resort hills India",
+  "Mayuri Hill Resort": "hill resort India",
+  "Bamboo Valley Resort": "nature resort hills India",
+  "Aara Valley Homestay": "village homestay India",
+
+  // Vizag
+  "Novotel Visakhapatnam Varun Beach": "beachfront hotel Vizag",
+  "The Park Visakhapatnam": "hotel beach India",
+  "Fortune Park Centra": "city hotel India",
+  "Zostel Visakhapatnam": "backpacker hostel India",
+
+  // Pondicherry
+  "Palais de Mahe (CGH Earth)": "French colonial hotel India",
+  "The Promenade": "beachfront hotel Pondicherry",
+  "Ginger Puducherry": "hotel Pondicherry",
+  "Kailash Guest House": "guesthouse garden India",
 };
 
 const activityQueries = {
@@ -75,6 +181,62 @@ const activityQueries = {
   "Bird Watching": "birdwatching binoculars forest India",
   Zipline: "zipline forest canopy adventure India",
   Camping: "riverside camping bonfire stars India",
+
+  // Goa
+  "Parasailing at Baga Beach": "parasailing beach India",
+  "Scuba Diving at Grande Island": "scuba diving India sea",
+  "Spice Plantation Tour": "spice plantation India",
+  "Sunset Cruise on Mandovi River": "river cruise sunset India",
+  "Casino Cruise": "casino boat river",
+
+  // Gokarna
+  "Beach Trekking (Om to Half Moon to Paradise)": "cliff beach trail India",
+  "Sunset Yoga at Kudle Beach": "beach yoga sunset",
+  "Dolphin Spotting Boat Ride": "dolphin boat ride sea",
+  "Surfing Lessons": "surfing lesson beach India",
+  "Meditation & Wellness Retreat Session": "meditation retreat India",
+
+  // Coorg
+  "Coffee Plantation Walk & Tasting": "coffee plantation walk India",
+  "River Rafting on Barapole River": "river rafting India forest",
+  "Trekking to Tadiandamol Peak": "mountain trek India hills",
+  "Elephant Bathing at Dubare Camp": "elephant bathing river India",
+  "Kodava Cuisine Cooking Class": "Indian cooking class kitchen",
+
+  // Ooty
+  "Nilgiri Toy Train Ride": "toy train hills India",
+  "Horse Riding at Ooty Lake": "horse riding lake India",
+  "Trekking in the Nilgiris": "mountain trekking India forest",
+  "Tea Tasting Tour": "tea tasting India plantation",
+  "Pedal Boating at Ooty Lake": "pedal boat lake India",
+
+  // Kodaikanal
+  "Boating at Kodaikanal Lake": "lake boating India hills",
+  "Cycling Around the Lake": "cycling lake path India",
+  "Trekking to Dolphin's Nose": "cliff viewpoint trek India",
+  "Homemade Chocolate & Eucalyptus Shopping Tour": "chocolate shop hill town",
+  "Guna Caves & Pillar Rocks Photo Trail": "rock formation trail India",
+
+  // Araku Valley
+  "Araku Valley Toy Train": "scenic train hills India",
+  "Coffee Estate & Tribal Village Tour": "tribal village India hills",
+  "Borra Caves Trekking & Exploration": "cave exploration India",
+  "Katiki Waterfall Trek": "waterfall trek India forest",
+  "Zip-lining at Araku Adventure Park": "zipline forest canopy India",
+
+  // Vizag
+  "Kailasagiri Ropeway Ride": "cable car ropeway hill India",
+  "Submarine Museum Tour": "submarine museum India",
+  "Water Sports at Rushikonda Beach": "jet ski beach India",
+  "Yarada Beach Sunset Drive": "coastal drive sunset India",
+  "Simhachalam Temple Darshan Trip": "hilltop temple India",
+
+  // Pondicherry
+  "Cycling Tour of French Quarter": "cycling colonial street India",
+  "Auroville & Matrimandir Visit": "Auroville Matrimandir India",
+  "Boating to Paradise Beach": "boat ride beach India",
+  "Scuba Diving": "scuba diving India coast",
+  "Pondicherry Heritage Walk": "heritage walk colonial India",
 };
 
 async function seedTable({
@@ -105,6 +267,14 @@ async function seedTable({
 
     console.log(`  📸 ${key}...`);
     const photos = await getUnsplashPhoto(query);
+
+    // Every call counts against Unsplash's 50 req/hour demo quota, whether
+    // it found a photo or not. This delay doesn't raise that hourly cap -
+    // once it's spent, only waiting (or a production API key) resets it -
+    // it just avoids needlessly bursting through a hard failure run with
+    // zero pacing (the previous bug: misses had no delay at all).
+    await new Promise((r) => setTimeout(r, 500));
+
     if (!photos) {
       console.log(`  ✗  ${key}: no result`);
       continue;
@@ -116,9 +286,6 @@ async function seedTable({
       .eq("id", row.id);
 
     console.log(updateError ? `  ✗  ${key}: ${updateError.message}` : `  ✅ ${key} done`);
-
-    // Stay well under Unsplash's 50 req/hour demo rate limit.
-    await new Promise((r) => setTimeout(r, 300));
   }
 }
 
