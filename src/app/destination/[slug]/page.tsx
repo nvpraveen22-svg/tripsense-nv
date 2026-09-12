@@ -166,7 +166,7 @@ export default function DestinationPage({
           </TabsList>
         </div>
 
-        <div className="mx-auto w-full max-w-md px-4 py-5">
+        <div className="mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
           <TabsContent value="overview">
             <OverviewTab destination={destination} />
           </TabsContent>

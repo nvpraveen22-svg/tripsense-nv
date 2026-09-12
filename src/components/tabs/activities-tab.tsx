@@ -52,7 +52,7 @@ export function ActivitiesTab({ destinationId }: ActivitiesTabProps) {
         emptyDescription="We're curating things to do for this destination."
         onRetry={refetch}
       >
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filtered.map((activity) => {
             const { value: difficulty, rest: r1 } = extractLabeled(
               activity.description,

@@ -146,9 +146,17 @@ export function BudgetTab({ destination, originCity }: BudgetTabProps) {
                 min={1}
                 max={8}
                 value={people}
-                onChange={(e) =>
-                  setPeople(Math.min(8, Math.max(1, Number(e.target.value) || 1)))
-                }
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  if (raw === "") {
+                    setPeople(1);
+                    return;
+                  }
+                  const parsed = Number(raw);
+                  if (Number.isNaN(parsed)) return;
+                  setPeople(Math.min(8, Math.max(1, parsed)));
+                }}
+                onFocus={(e) => e.currentTarget.select()}
               />
             </div>
             <div className="flex flex-col gap-1.5">
@@ -159,9 +167,17 @@ export function BudgetTab({ destination, originCity }: BudgetTabProps) {
                 min={1}
                 max={7}
                 value={days}
-                onChange={(e) =>
-                  setDays(Math.min(7, Math.max(1, Number(e.target.value) || 1)))
-                }
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  if (raw === "") {
+                    setDays(1);
+                    return;
+                  }
+                  const parsed = Number(raw);
+                  if (Number.isNaN(parsed)) return;
+                  setDays(Math.min(7, Math.max(1, parsed)));
+                }}
+                onFocus={(e) => e.currentTarget.select()}
               />
             </div>
           </div>
