@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Image from "next/image";
 import { Clock, Users } from "lucide-react";
 import { useDestinationTable } from "@/hooks/use-destination-table";
 import { extractLabeled } from "@/lib/parse-notes";
@@ -15,9 +16,9 @@ interface ActivitiesTabProps {
 }
 
 const DIFFICULTY_STYLES: Record<string, string> = {
-  easy: "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400",
-  moderate: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400",
-  hard: "bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-400",
+  easy: "bg-emerald-500 text-white",
+  moderate: "bg-amber-500 text-white",
+  hard: "bg-red-500 text-white",
 };
 
 export function ActivitiesTab({ destinationId }: ActivitiesTabProps) {
@@ -62,8 +63,45 @@ export function ActivitiesTab({ destinationId }: ActivitiesTabProps) {
             const difficultyKey = difficulty?.toLowerCase();
 
             return (
-              <Card key={activity.id}>
-                <CardContent className="flex flex-col gap-1.5 pt-1">
+              <Card key={activity.id} className="overflow-hidden">
+                <div className="relative h-[180px] w-full bg-gradient-to-br from-primary/40 to-secondary/40">
+                  {activity.photo_url && (
+                    <Image
+                      src={activity.photo_url}
+                      alt={activity.name}
+                      fill
+                      sizes="(max-width: 640px) 100vw, 50vw"
+                      className="object-cover"
+                    />
+                  )}
+                  {difficultyKey && (
+                    <span
+                      className={cn(
+                        "absolute left-2 top-2 rounded-full px-2 py-0.5 text-xs font-medium capitalize shadow-sm",
+                        DIFFICULTY_STYLES[difficultyKey] ?? "bg-muted text-muted-foreground"
+                      )}
+                    >
+                      {difficulty}
+                    </span>
+                  )}
+                  <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-gradient-to-t from-black/70 to-transparent px-2.5 py-2">
+                    {activity.duration_hours != null && (
+                      <span className="flex items-center gap-1 text-xs font-medium text-white">
+                        <Clock className="size-3" />
+                        {activity.duration_hours < 1
+                          ? `${activity.duration_hours * 60} min`
+                          : `${activity.duration_hours} hr${activity.duration_hours > 1 ? "s" : ""}`}
+                      </span>
+                    )}
+                    {activity.price_per_person != null && (
+                      <span className="text-xs font-medium text-white">
+                        ₹{activity.price_per_person}/person
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <CardContent className="flex flex-col gap-1.5 pt-3">
                   <div className="flex items-start justify-between gap-2">
                     <span className="text-sm font-medium text-foreground">
                       {activity.name}
@@ -80,30 +118,6 @@ export function ActivitiesTab({ destinationId }: ActivitiesTabProps) {
                       {description}
                     </p>
                   )}
-
-                  <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-                    {activity.duration_hours != null && (
-                      <Badge variant="outline" className="gap-1">
-                        <Clock className="size-3" />
-                        {activity.duration_hours < 1
-                          ? `${activity.duration_hours * 60} min`
-                          : `${activity.duration_hours} hr${activity.duration_hours > 1 ? "s" : ""}`}
-                      </Badge>
-                    )}
-                    {activity.price_per_person != null && (
-                      <Badge variant="outline">₹{activity.price_per_person}/person</Badge>
-                    )}
-                    {difficultyKey && (
-                      <span
-                        className={cn(
-                          "rounded-full px-2 py-0.5 text-xs font-medium capitalize",
-                          DIFFICULTY_STYLES[difficultyKey] ?? "bg-muted text-muted-foreground"
-                        )}
-                      >
-                        {difficulty}
-                      </span>
-                    )}
-                  </div>
 
                   <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                     {bestSeason && <span>Best season: {bestSeason}</span>}

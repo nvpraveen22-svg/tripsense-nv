@@ -13,6 +13,7 @@ export interface Destination {
   latitude: number | null;
   longitude: number | null;
   cover_image_url: string | null;
+  hero_url: string | null;
   status: string | null;
   last_updated: string;
   created_at: string;
@@ -105,6 +106,7 @@ export interface Activity {
   age_restriction: string | null;
   operator_name: string | null;
   booking_required: boolean | null;
+  photo_url: string | null;
   sort_order: number | null;
   created_at: string;
 }

@@ -87,7 +87,7 @@ export default function DestinationPage({
   if (loading) {
     return (
       <div className="mx-auto flex min-h-screen w-full max-w-md flex-col gap-4 px-4 py-6">
-        <Skeleton className="h-44 w-full rounded-2xl" />
+        <Skeleton className="h-[280px] w-full rounded-2xl" />
         <Skeleton className="h-8 w-full rounded-lg" />
         <Skeleton className="h-40 w-full rounded-xl" />
       </div>
@@ -114,10 +114,10 @@ export default function DestinationPage({
 
   return (
     <div className="flex min-h-screen flex-col bg-background pb-8">
-      <section className="relative h-48 w-full overflow-hidden bg-gradient-to-br from-primary to-secondary">
-        {destination.cover_image_url && (
+      <section className="relative h-[280px] w-full overflow-hidden bg-gradient-to-br from-primary to-secondary">
+        {(destination.hero_url ?? destination.cover_image_url) && (
           <Image
-            src={destination.cover_image_url}
+            src={destination.hero_url ?? destination.cover_image_url!}
             alt={destination.name}
             fill
             priority
@@ -125,7 +125,7 @@ export default function DestinationPage({
             className="object-cover"
           />
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-black/40" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-transparent" />
 
         <Link
           href="/"

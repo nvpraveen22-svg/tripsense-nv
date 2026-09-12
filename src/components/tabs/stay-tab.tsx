@@ -2,14 +2,13 @@
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
-import { MapPin } from "lucide-react";
+import { MapPin, Star } from "lucide-react";
 import { useDestinationTable } from "@/hooks/use-destination-table";
 import { extractLabeled } from "@/lib/parse-notes";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { TabState } from "@/components/tabs/tab-state";
-import { StarRating } from "@/components/tabs/star-rating";
 import { cn } from "@/lib/utils";
 
 interface StayTabProps {
@@ -87,17 +86,30 @@ export function StayTab({ destinationId }: StayTabProps) {
 
             return (
               <Card key={hotel.id} className="overflow-hidden">
-                {hotel.photo_url && (
-                  <div className="relative h-32 w-full bg-muted">
+                <div className="relative h-[200px] w-full bg-gradient-to-br from-primary/40 to-secondary/40">
+                  {hotel.photo_url && (
                     <Image
                       src={hotel.photo_url}
                       alt={hotel.name}
                       fill
-                      sizes="400px"
+                      sizes="(max-width: 640px) 100vw, 50vw"
                       className="object-cover"
                     />
-                  </div>
-                )}
+                  )}
+                  {hotel.rating != null && (
+                    <span className="absolute right-2 top-2 flex items-center gap-0.5 rounded-full bg-amber-400 px-1.5 py-0.5 text-xs font-semibold text-amber-950 shadow-sm">
+                      <Star className="size-3 fill-current" />
+                      {hotel.rating.toFixed(1)}
+                    </span>
+                  )}
+                  {hotel.price_min != null && (
+                    <span className="absolute bottom-2 left-2 rounded-full bg-black/70 px-2 py-1 text-xs font-medium text-white backdrop-blur-sm">
+                      ₹{hotel.price_min}
+                      {hotel.price_max != null && `–₹${hotel.price_max}`}
+                      <span className="font-normal opacity-80"> / night</span>
+                    </span>
+                  )}
+                </div>
                 <CardContent className="flex flex-col gap-1.5 pt-3">
                   <div className="flex items-start justify-between gap-2">
                     <span className="text-sm font-medium text-foreground">
@@ -108,20 +120,9 @@ export function StayTab({ destinationId }: StayTabProps) {
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    {hotel.rating != null && <StarRating value={hotel.rating} />}
-                    {reviewCount && (
-                      <span className="text-xs text-muted-foreground">
-                        ({reviewCount} reviews)
-                      </span>
-                    )}
-                  </div>
-
-                  {(hotel.price_min != null || hotel.price_max != null) && (
-                    <span className="text-sm font-medium text-foreground">
-                      ₹{hotel.price_min ?? "—"}
-                      {hotel.price_max != null && ` – ₹${hotel.price_max}`}{" "}
-                      <span className="font-normal text-muted-foreground">/ night</span>
+                  {reviewCount && (
+                    <span className="text-xs text-muted-foreground">
+                      {reviewCount} reviews
                     </span>
                   )}
 

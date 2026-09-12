@@ -1,13 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Clock, MapPin, Ticket } from "lucide-react";
+import Image from "next/image";
+import { Clock, MapPin, Star, Ticket } from "lucide-react";
 import { useDestinationTable } from "@/hooks/use-destination-table";
 import { extractLabeled } from "@/lib/parse-notes";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TabState } from "@/components/tabs/tab-state";
-import { StarRating } from "@/components/tabs/star-rating";
 import { CategoryFilter } from "@/components/tabs/category-filter";
 
 interface AttractionsTabProps {
@@ -58,22 +58,37 @@ export function AttractionsTab({ destinationId }: AttractionsTabProps) {
             );
 
             return (
-              <Card key={attraction.id}>
-                <CardContent className="flex flex-col gap-2 pt-1">
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="text-sm font-medium text-foreground">
-                      {attraction.name}
+              <Card key={attraction.id} className="overflow-hidden">
+                <div className="relative h-40 w-full bg-gradient-to-br from-primary/40 to-secondary/40">
+                  {attraction.photo_url && (
+                    <Image
+                      src={attraction.photo_url}
+                      alt={attraction.name}
+                      fill
+                      sizes="(max-width: 640px) 100vw, 33vw"
+                      className="object-cover"
+                    />
+                  )}
+                  {attraction.rating != null && (
+                    <span className="absolute right-2 top-2 flex items-center gap-0.5 rounded-full bg-black/50 px-1.5 py-0.5 text-xs font-medium text-white backdrop-blur-sm">
+                      <Star className="size-3 fill-current" />
+                      {attraction.rating.toFixed(1)}
                     </span>
-                    {attraction.rating != null && (
-                      <StarRating value={attraction.rating} showValue={false} />
-                    )}
-                  </div>
-
+                  )}
                   {attraction.category && (
-                    <Badge variant="secondary" className="w-fit capitalize">
+                    <Badge
+                      variant="secondary"
+                      className="absolute bottom-2 left-2 w-fit capitalize"
+                    >
                       {attraction.category}
                     </Badge>
                   )}
+                </div>
+
+                <CardContent className="flex flex-col gap-2 pt-3">
+                  <span className="text-sm font-medium text-foreground">
+                    {attraction.name}
+                  </span>
 
                   {description && (
                     <p className="text-xs leading-relaxed text-muted-foreground">

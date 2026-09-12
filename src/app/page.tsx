@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { MapPin, Compass, Sparkles } from "lucide-react";
+import Image from "next/image";
+import { MapPin, Compass, Sparkles, ArrowRight } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import type { Destination } from "@/types";
 import {
@@ -161,18 +162,42 @@ export default function Home() {
               </span>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              {destinations.slice(0, 6).map((destination) => (
+              {destinations.map((destination) => (
                 <button
                   key={destination.id}
                   onClick={() => handleSelect(destination.slug)}
-                  className="flex flex-col items-start gap-1 rounded-xl border border-border bg-card p-3 text-left transition-colors hover:border-primary/50 hover:bg-accent"
+                  className="group flex flex-col overflow-hidden rounded-xl bg-card text-left ring-1 ring-foreground/10 transition-all hover:scale-[1.02] hover:shadow-lg"
                 >
-                  <span className="text-sm font-medium text-foreground">
-                    {destination.name}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {destination.state}
-                  </span>
+                  <div className="relative h-[140px] w-full shrink-0 overflow-hidden sm:h-[180px]">
+                    {destination.cover_image_url ? (
+                      <Image
+                        src={destination.cover_image_url}
+                        alt={destination.name}
+                        fill
+                        sizes="200px"
+                        className="object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="h-full w-full bg-gradient-to-br from-primary to-secondary" />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-transparent" />
+                    <span className="absolute left-1.5 top-1.5 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-medium text-foreground shadow-sm">
+                      {destination.state}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between gap-1 p-2.5">
+                    <div className="flex flex-col gap-0.5 overflow-hidden">
+                      <span className="truncate text-sm font-medium text-foreground">
+                        {destination.name}
+                      </span>
+                      {destination.tagline && (
+                        <span className="truncate text-xs text-muted-foreground">
+                          {destination.tagline}
+                        </span>
+                      )}
+                    </div>
+                    <ArrowRight className="size-3.5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                  </div>
                 </button>
               ))}
             </div>
