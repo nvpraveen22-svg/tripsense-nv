@@ -2,88 +2,120 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Camera, PlayCircle } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Camera, PlayCircle, X } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { DESTINATION_HIGHLIGHTS } from "@/lib/destination-highlights";
-import type { YoutubeVideo } from "@/app/api/youtube/route";
+import { DESTINATION_VIDEOS } from "@/lib/destination-videos";
 
 interface MediaTabProps {
+  destinationId: string;
   destinationName: string;
   destinationSlug: string;
 }
 
-function formatViews(count: number | null): string {
-  if (count == null) return "";
-  if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M views`;
-  if (count >= 1_000) return `${(count / 1_000).toFixed(1)}K views`;
-  return `${count} views`;
+interface GalleryPhoto {
+  url: string;
+  caption: string;
 }
 
-export function MediaTab({ destinationName, destinationSlug }: MediaTabProps) {
-  const [videos, setVideos] = useState<YoutubeVideo[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [unavailable, setUnavailable] = useState(false);
+function VideoThumbnail({ id, title }: { id: string; title: string }) {
+  const [src, setSrc] = useState(`https://img.youtube.com/vi/${id}/maxresdefault.jpg`);
+
+  return (
+    <a
+      href={`https://www.youtube.com/watch?v=${id}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="group flex flex-col gap-1.5"
+    >
+      <div className="relative aspect-video overflow-hidden rounded-xl bg-muted">
+        <Image
+          src={src}
+          alt={title}
+          fill
+          sizes="(max-width: 480px) 50vw, 33vw"
+          className="object-cover"
+          onError={() => setSrc(`https://img.youtube.com/vi/${id}/hqdefault.jpg`)}
+        />
+        <span className="absolute inset-0 flex items-center justify-center bg-black/25 transition-colors group-hover:bg-black/35">
+          <PlayCircle className="size-9 text-white drop-shadow" />
+        </span>
+      </div>
+      <span className="line-clamp-2 text-xs font-medium text-foreground">{title}</span>
+    </a>
+  );
+}
+
+export function MediaTab({ destinationId, destinationName, destinationSlug }: MediaTabProps) {
+  const [photos, setPhotos] = useState<GalleryPhoto[]>([]);
+  const [loadingPhotos, setLoadingPhotos] = useState(true);
+  const [photoError, setPhotoError] = useState(false);
+  const [lightbox, setLightbox] = useState<GalleryPhoto | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
-    async function loadVideos() {
-      setLoading(true);
-      setUnavailable(false);
+    async function loadPhotos() {
+      setLoadingPhotos(true);
+      setPhotoError(false);
       try {
-        const [vlogRes, adventureRes] = await Promise.all([
-          fetch(
-            `/api/youtube?query=${encodeURIComponent(`${destinationName} travel vlog`)}&maxResults=3`
-          ),
-          fetch(
-            `/api/youtube?query=${encodeURIComponent(`${destinationName} adventure`)}&maxResults=3`
-          ),
+        const [attractions, hotels, activities] = await Promise.all([
+          supabase
+            .from("attractions")
+            .select("name, photo_url")
+            .eq("destination_id", destinationId),
+          supabase.from("hotels").select("name, photo_url").eq("destination_id", destinationId),
+          supabase
+            .from("activities")
+            .select("name, photo_url")
+            .eq("destination_id", destinationId),
         ]);
 
-        if (!vlogRes.ok || !adventureRes.ok) {
-          if (!cancelled) setUnavailable(true);
+        if (cancelled) return;
+
+        if (attractions.error || hotels.error || activities.error) {
+          setPhotoError(true);
           return;
         }
 
-        const [vlogData, adventureData] = await Promise.all([
-          vlogRes.json(),
-          adventureRes.json(),
-        ]);
+        const toPhotos = (
+          rows: { name: string; photo_url: string | null }[] | null
+        ): GalleryPhoto[] =>
+          (rows ?? [])
+            .filter((r) => Boolean(r.photo_url))
+            .map((r) => ({ url: r.photo_url as string, caption: r.name }));
 
-        if (!cancelled) {
-          setVideos([...(vlogData.videos ?? []), ...(adventureData.videos ?? [])]);
-        }
+        setPhotos([
+          ...toPhotos(attractions.data),
+          ...toPhotos(hotels.data),
+          ...toPhotos(activities.data),
+        ]);
       } catch {
-        if (!cancelled) setUnavailable(true);
+        if (!cancelled) setPhotoError(true);
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) setLoadingPhotos(false);
       }
     }
 
-    loadVideos();
+    loadPhotos();
     return () => {
       cancelled = true;
     };
-  }, [destinationName]);
+  }, [destinationId]);
 
+  const videos = DESTINATION_VIDEOS[destinationSlug] ?? [];
   const photoSpots = DESTINATION_HIGHLIGHTS[destinationSlug]?.photoSpots ?? [];
 
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-2">
         <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          Videos
+          📹 Videos
         </span>
 
-        {loading ? (
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="aspect-video w-full rounded-xl" />
-            ))}
-          </div>
-        ) : unavailable || videos.length === 0 ? (
+        {videos.length === 0 ? (
           <Alert>
             <AlertTitle>Videos coming soon</AlertTitle>
             <AlertDescription>
@@ -93,49 +125,60 @@ export function MediaTab({ destinationName, destinationSlug }: MediaTabProps) {
         ) : (
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
             {videos.map((video) => (
-              <a
-                key={video.id}
-                href={`https://www.youtube.com/watch?v=${video.id}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group flex flex-col gap-1"
-              >
-                <div className="relative aspect-video overflow-hidden rounded-xl bg-muted">
-                  {video.thumbnail && (
-                    <Image
-                      src={video.thumbnail}
-                      alt={video.title}
-                      fill
-                      sizes="(max-width: 480px) 50vw, 33vw"
-                      className="object-cover"
-                    />
-                  )}
-                  <span className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 transition-opacity group-hover:opacity-100">
-                    <PlayCircle className="size-8 text-white drop-shadow" />
-                  </span>
-                </div>
-                <span className="line-clamp-2 text-xs font-medium text-foreground">
-                  {video.title}
-                </span>
-                {video.viewCount != null && (
-                  <span className="text-xs text-muted-foreground">
-                    {formatViews(video.viewCount)}
-                  </span>
-                )}
-              </a>
+              <VideoThumbnail key={video.id} id={video.id} title={video.title} />
             ))}
           </div>
         )}
       </div>
 
-      <Card>
-        <CardContent className="flex flex-col items-center gap-1.5 py-6 text-center">
-          <span className="text-2xl">📸</span>
-          <span className="text-sm font-medium text-foreground">
-            Community photos coming soon
-          </span>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col gap-2">
+        <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          🖼️ Photo Gallery
+        </span>
+
+        {loadingPhotos ? (
+          <div className="columns-2 gap-2.5 sm:columns-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton
+                key={i}
+                className="mb-2.5 w-full rounded-xl"
+                style={{ height: `${120 + (i % 3) * 40}px` }}
+              />
+            ))}
+          </div>
+        ) : photoError ? (
+          <Alert variant="destructive">
+            <AlertTitle>Couldn&apos;t load photos</AlertTitle>
+            <AlertDescription>Please try again in a moment.</AlertDescription>
+          </Alert>
+        ) : photos.length === 0 ? (
+          <Alert>
+            <AlertTitle>No photos yet</AlertTitle>
+            <AlertDescription>
+              We&apos;re still gathering photos for {destinationName}.
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <div className="columns-2 gap-2.5 sm:columns-3">
+            {photos.map((photo, i) => (
+              <button
+                key={`${photo.url}-${i}`}
+                onClick={() => setLightbox(photo)}
+                className="mb-2.5 block w-full overflow-hidden rounded-xl bg-muted"
+              >
+                <Image
+                  src={photo.url}
+                  alt={photo.caption}
+                  width={400}
+                  height={300}
+                  loading="lazy"
+                  className="w-full object-cover"
+                />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
 
       {photoSpots.length > 0 && (
         <div className="flex flex-col gap-2">
@@ -152,6 +195,34 @@ export function MediaTab({ destinationName, destinationSlug }: MediaTabProps) {
                 {spot}
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4"
+          onClick={() => setLightbox(null)}
+        >
+          <button
+            className="absolute right-4 top-4 flex size-9 items-center justify-center rounded-full bg-white/10 text-white backdrop-blur-sm"
+            onClick={() => setLightbox(null)}
+            aria-label="Close"
+          >
+            <X className="size-5" />
+          </button>
+          <div
+            className="flex max-h-full max-w-full flex-col items-center gap-2"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Image
+              src={lightbox.url}
+              alt={lightbox.caption}
+              width={1200}
+              height={900}
+              className="max-h-[80vh] w-auto rounded-lg object-contain"
+            />
+            <span className="text-sm text-white/90">{lightbox.caption}</span>
           </div>
         </div>
       )}

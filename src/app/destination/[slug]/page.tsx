@@ -195,6 +195,7 @@ export default function DestinationPage({
           </TabsContent>
           <TabsContent value="media">
             <MediaTab
+              destinationId={destination.id}
               destinationName={destination.name}
               destinationSlug={destination.slug}
             />
