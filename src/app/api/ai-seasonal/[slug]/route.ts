@@ -46,8 +46,25 @@ interface RouteParams {
   params: { slug: string };
 }
 
-async function resolveDestination(slug: string) {
+interface SeasonalDestination {
+  id: string;
+  name: string;
+  state: string;
+  tagline: string | null;
+  best_time_to_visit: string | null;
+  best_months: string[] | null;
+  okay_months: string[] | null;
+  avoid_months: string[] | null;
+  month_notes: Record<string, string> | null;
+}
+
+type ResolveResult =
+  | { ok: true; data: SeasonalDestination }
+  | { ok: false; status: 404 | 500; message: string };
+
+async function resolveDestination(slug: string): Promise<ResolveResult> {
   const supabase = createAdminClient();
+  console.log(`[ai-seasonal] looking up destination for slug="${slug}"`);
   const { data, error } = await supabase
     .from("destinations")
     .select(
@@ -56,15 +73,29 @@ async function resolveDestination(slug: string) {
     .eq("slug", slug)
     .maybeSingle();
 
-  if (error || !data) return null;
-  return data;
+  if (error) {
+    // A schema/query error (e.g. a selected column doesn't exist yet) is NOT
+    // the same as "no destination with this slug" - conflating the two is
+    // exactly what made this show a misleading "Destination not found".
+    console.error(`[ai-seasonal] query error for slug="${slug}":`, error.message, error);
+    return { ok: false, status: 500, message: error.message };
+  }
+
+  if (!data) {
+    console.warn(`[ai-seasonal] no destination row matched slug="${slug}"`);
+    return { ok: false, status: 404, message: "Destination not found." };
+  }
+
+  console.log(`[ai-seasonal] resolved slug="${slug}" -> id=${data.id}`);
+  return { ok: true, data: data as SeasonalDestination };
 }
 
 export async function GET(_request: NextRequest, { params }: RouteParams) {
-  const destination = await resolveDestination(params.slug);
-  if (!destination) {
-    return NextResponse.json({ error: "Destination not found." }, { status: 404 });
+  const resolved = await resolveDestination(params.slug);
+  if (!resolved.ok) {
+    return NextResponse.json({ error: resolved.message }, { status: resolved.status });
   }
+  const destination = resolved.data;
 
   const supabase = createAdminClient();
   const { data, error } = await supabase
@@ -112,10 +143,11 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
     );
   }
 
-  const destination = await resolveDestination(params.slug);
-  if (!destination) {
-    return NextResponse.json({ error: "Destination not found." }, { status: 404 });
+  const resolved = await resolveDestination(params.slug);
+  if (!resolved.ok) {
+    return NextResponse.json({ error: resolved.message }, { status: resolved.status });
   }
+  const destination = resolved.data;
 
   const now = new Date();
   const currentMonthLabel = now.toLocaleDateString("en-US", {

@@ -74,8 +74,24 @@ interface RouteParams {
   params: { slug: string };
 }
 
-async function resolveDestination(slug: string) {
+interface ResolvedDestination {
+  id: string;
+  name: string;
+  state: string;
+  tagline: string | null;
+  description: string | null;
+  best_time_to_visit: string | null;
+  ideal_trip_days_min: number | null;
+  ideal_trip_days_max: number | null;
+}
+
+type ResolveResult =
+  | { ok: true; data: ResolvedDestination }
+  | { ok: false; status: 404 | 500; message: string };
+
+async function resolveDestination(slug: string): Promise<ResolveResult> {
   const supabase = createAdminClient();
+  console.log(`[ai-insights] looking up destination for slug="${slug}"`);
   const { data, error } = await supabase
     .from("destinations")
     .select(
@@ -84,15 +100,23 @@ async function resolveDestination(slug: string) {
     .eq("slug", slug)
     .maybeSingle();
 
-  if (error || !data) return null;
-  return data;
+  if (error) {
+    console.error(`[ai-insights] query error for slug="${slug}":`, error.message, error);
+    return { ok: false, status: 500, message: error.message };
+  }
+  if (!data) {
+    console.warn(`[ai-insights] no destination row matched slug="${slug}"`);
+    return { ok: false, status: 404, message: "Destination not found." };
+  }
+  return { ok: true, data: data as ResolvedDestination };
 }
 
 export async function GET(_request: NextRequest, { params }: RouteParams) {
-  const destination = await resolveDestination(params.slug);
-  if (!destination) {
-    return NextResponse.json({ error: "Destination not found." }, { status: 404 });
+  const resolved = await resolveDestination(params.slug);
+  if (!resolved.ok) {
+    return NextResponse.json({ error: resolved.message }, { status: resolved.status });
   }
+  const destination = resolved.data;
 
   const supabase = createAdminClient();
   const { data, error } = await supabase
@@ -103,6 +127,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     .maybeSingle();
 
   if (error) {
+    console.error(`[ai-insights] ai_insights query error for destination_id=${destination.id}:`, error.message, error);
     return NextResponse.json(
       { error: "Couldn't load insights right now." },
       { status: 500 }
@@ -140,10 +165,11 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
     );
   }
 
-  const destination = await resolveDestination(params.slug);
-  if (!destination) {
-    return NextResponse.json({ error: "Destination not found." }, { status: 404 });
+  const resolved = await resolveDestination(params.slug);
+  if (!resolved.ok) {
+    return NextResponse.json({ error: resolved.message }, { status: resolved.status });
   }
+  const destination = resolved.data;
 
   const supabase = createAdminClient();
   const [{ data: hotels }, { data: activities }, { data: attractions }] = await Promise.all([
