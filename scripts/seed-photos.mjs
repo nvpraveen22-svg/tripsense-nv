@@ -60,7 +60,7 @@ const attractionQueries = {
   // Goa
   "Baga Beach": "Baga beach Goa",
   "Basilica of Bom Jesus": "Bom Jesus Basilica Goa",
-  "Dudhsagar Falls": "Dudhsagar waterfall Goa",
+  "Dudhsagar Falls": "waterfall forest India",
   "Fort Aguada": "Fort Aguada Goa",
   "Anjuna Flea Market": "Anjuna flea market Goa",
 
@@ -73,18 +73,18 @@ const attractionQueries = {
 
   // Coorg
   "Abbey Falls": "Abbey falls Coorg",
-  "Raja's Seat": "Coorg viewpoint sunset",
+  "Raja's Seat": "hill viewpoint sunset",
   "Dubare Elephant Camp": "elephant river camp India",
   "Namdroling Golden Temple": "Namdroling monastery Bylakuppe",
   "Talacauvery": "Talacauvery Coorg hills",
-  "Mandalpatti Viewpoint": "Coorg hills viewpoint",
+  "Mandalpatti Viewpoint": "green hills viewpoint",
 
   // Ooty
   "Ooty Lake": "Ooty lake boating",
   "Government Botanical Garden": "botanical garden Ooty",
   "Nilgiri Mountain Railway": "Nilgiri toy train",
   "Doddabetta Peak": "Doddabetta peak Ooty",
-  "Tea Museum & Factory": "tea plantation factory India",
+  "Tea Museum & Factory": "tea factory India",
 
   // Kodaikanal
   "Kodaikanal Lake": "Kodaikanal lake",
@@ -94,9 +94,9 @@ const attractionQueries = {
   "Guna Caves (Devil's Kitchen)": "rock cave forest India",
 
   // Araku Valley
-  "Borra Caves": "Borra caves India",
+  "Borra Caves": "cave formation India",
   "Araku Tribal Museum": "tribal museum India",
-  "Katiki Waterfalls": "Katiki waterfall Araku",
+  "Katiki Waterfalls": "waterfall forest India",
   "Araku Valley Coffee Plantations": "coffee plantation India hills",
   "Padmapuram Gardens": "terraced garden India hills",
 
@@ -105,13 +105,13 @@ const attractionQueries = {
   "Ramakrishna Beach (RK Beach)": "RK beach Visakhapatnam",
   "INS Kursura Submarine Museum": "submarine museum India",
   "Rushikonda Beach": "Rushikonda beach Vizag",
-  "TU 142 Aircraft Museum": "aircraft museum India",
+  "TU 142 Aircraft Museum": "military aircraft",
   "Yarada Beach": "hilltop beach India coast",
 
   // Pondicherry
   "Promenade Beach (Rock Beach)": "Pondicherry promenade beach",
   Auroville: "Auroville Matrimandir India",
-  "French Quarter (White Town)": "Pondicherry French quarter",
+  "French Quarter (White Town)": "colonial street India",
   "Basilica of the Sacred Heart of Jesus": "gothic church India",
   "Paradise Beach": "Paradise beach Pondicherry",
 };
@@ -138,20 +138,20 @@ const hotelQueries = {
   // Coorg
   "Taj Madikeri Resort & Spa": "luxury resort coffee estate",
   "Orange County Coorg": "plantation resort Coorg",
-  "Coorg Wilderness Resort": "forest resort Coorg",
+  "Coorg Wilderness Resort": "forest lodge India",
   "Coorg Cliffs Resort": "hillside resort Coorg",
 
   // Ooty
   "The Savoy (IHCL SeleQtions)": "heritage hotel garden India",
   "Sterling Ooty Elk Hill": "hillside hotel Ooty",
-  "Fortune Resort Sullivan Court": "hotel Ooty hills",
+  "Fortune Resort Sullivan Court": "hotel India",
   "YWCA Anandagiri": "budget guesthouse hills India",
 
   // Kodaikanal
-  "The Carlton (CGH Earth)": "lakeside heritage hotel India",
+  "The Carlton (CGH Earth)": "lake hotel India",
   "Sterling Kodai Lake": "hillside hotel Kodaikanal",
   "Villa Retreat": "hillside hotel valley view",
-  "Cloud Street Backpackers": "hostel hills India",
+  "Cloud Street Backpackers": "hostel India",
 
   // Araku Valley
   "Haritha Valley Resort (APTDC)": "valley resort hills India",
@@ -190,7 +190,7 @@ const activityQueries = {
   "Casino Cruise": "casino boat river",
 
   // Gokarna
-  "Beach Trekking (Om to Half Moon to Paradise)": "cliff beach trail India",
+  "Beach Trekking (Om to Half Moon to Paradise)": "coastal cliff trail",
   "Sunset Yoga at Kudle Beach": "beach yoga sunset",
   "Dolphin Spotting Boat Ride": "dolphin boat ride sea",
   "Surfing Lessons": "surfing lesson beach India",
@@ -201,7 +201,7 @@ const activityQueries = {
   "River Rafting on Barapole River": "river rafting India forest",
   "Trekking to Tadiandamol Peak": "mountain trek India hills",
   "Elephant Bathing at Dubare Camp": "elephant bathing river India",
-  "Kodava Cuisine Cooking Class": "Indian cooking class kitchen",
+  "Kodava Cuisine Cooking Class": "Indian cooking",
 
   // Ooty
   "Nilgiri Toy Train Ride": "toy train hills India",
@@ -212,10 +212,10 @@ const activityQueries = {
 
   // Kodaikanal
   "Boating at Kodaikanal Lake": "lake boating India hills",
-  "Cycling Around the Lake": "cycling lake path India",
+  "Cycling Around the Lake": "cycling lake",
   "Trekking to Dolphin's Nose": "cliff viewpoint trek India",
   "Homemade Chocolate & Eucalyptus Shopping Tour": "chocolate shop hill town",
-  "Guna Caves & Pillar Rocks Photo Trail": "rock formation trail India",
+  "Guna Caves & Pillar Rocks Photo Trail": "rock formation India",
 
   // Araku Valley
   "Araku Valley Toy Train": "scenic train hills India",
