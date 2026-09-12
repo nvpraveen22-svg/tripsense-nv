@@ -154,6 +154,46 @@ export interface AiItinerary {
   generated_at: string;
 }
 
+export interface InsightHotelReview {
+  name: string;
+  pros: string[];
+  cons: string[];
+  verdict: string;
+  bookInAdvance: boolean;
+  bookInAdvanceNote?: string;
+}
+
+export interface InsightActivityTag {
+  name: string;
+  reason: string;
+  familyFriendly: boolean;
+  realPricing?: string;
+}
+
+export interface AiInsightsContent {
+  stayRecommendations: InsightHotelReview[];
+  activities: {
+    mustDo: InsightActivityTag[];
+    optional: InsightActivityTag[];
+    skip: InsightActivityTag[];
+  };
+  practicalWarnings: string[];
+  budgetRealityCheck: {
+    realistic: boolean;
+    verdict: string;
+    costSpikes: string[];
+  };
+  localTips: string[];
+}
+
+export interface AiInsights {
+  id: string;
+  destination_id: string;
+  content: string; // JSON-stringified AiInsightsContent
+  generated_at: string;
+  prompt_version: number;
+}
+
 export interface TollRoute {
   id: string;
   destination_id: string;

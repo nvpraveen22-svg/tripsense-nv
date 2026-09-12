@@ -23,6 +23,7 @@ import { ActivitiesTab } from "@/components/tabs/activities-tab";
 import { BudgetTab } from "@/components/tabs/budget-tab";
 import { MediaTab } from "@/components/tabs/media-tab";
 import { AiPlanTab } from "@/components/tabs/ai-plan-tab";
+import { InsightsTab } from "@/components/tabs/insights-tab";
 import { AdminTab } from "@/components/tabs/admin-tab";
 
 const TABS = [
@@ -35,6 +36,7 @@ const TABS = [
   { value: "budget", label: "Budget" },
   { value: "media", label: "Media" },
   { value: "ai-plan", label: "AI Plan" },
+  { value: "insights", label: "Insights" },
   { value: "admin", label: "Admin" },
 ] as const;
 
@@ -203,6 +205,9 @@ export default function DestinationPage({
               destinationName={destination.name}
               originCity={originCity}
             />
+          </TabsContent>
+          <TabsContent value="insights">
+            <InsightsTab destinationSlug={destination.slug} />
           </TabsContent>
           <TabsContent value="admin">
             <AdminTab destination={destination} />
