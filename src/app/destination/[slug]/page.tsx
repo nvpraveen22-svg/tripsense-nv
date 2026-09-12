@@ -189,19 +189,23 @@ export default function DestinationPage({
             <ActivitiesTab destinationId={destination.id} />
           </TabsContent>
           <TabsContent value="budget">
-            <BudgetTab destination={destination} />
+            <BudgetTab destination={destination} originCity={originCity} />
           </TabsContent>
           <TabsContent value="media">
-            <MediaTab destinationId={destination.id} />
+            <MediaTab
+              destinationName={destination.name}
+              destinationSlug={destination.slug}
+            />
           </TabsContent>
           <TabsContent value="ai-plan">
             <AiPlanTab
               destinationId={destination.id}
+              destinationName={destination.name}
               originCity={originCity}
             />
           </TabsContent>
           <TabsContent value="admin">
-            <AdminTab destinationName={destination.name} />
+            <AdminTab destination={destination} />
           </TabsContent>
         </div>
       </Tabs>

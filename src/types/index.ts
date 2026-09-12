@@ -1,4 +1,4 @@
-// Core domain types for TripSense AI, mirroring the Supabase schema.
+// Core domain types for TripSense AI, mirroring the live Supabase schema.
 
 export interface Destination {
   id: string;
@@ -10,25 +10,30 @@ export interface Destination {
   best_time_to_visit: string | null;
   ideal_trip_days_min: number | null;
   ideal_trip_days_max: number | null;
+  latitude: number | null;
+  longitude: number | null;
   cover_image_url: string | null;
+  status: string | null;
+  last_updated: string;
   created_at: string;
-  updated_at: string;
 }
 
 export interface Attraction {
   id: string;
   destination_id: string;
   name: string;
-  description: string | null;
   category: string | null;
-  image_url: string | null;
-  latitude: number | null;
-  longitude: number | null;
-  entry_fee: string | null;
-  opening_hours: string | null;
-  visit_duration_minutes: number | null;
+  description: string | null;
+  distance_from_center_km: number | null;
+  entry_fee_adult: number | null;
+  entry_fee_child: number | null;
+  timings: string | null;
+  duration_hours: number | null;
+  family_friendly: boolean | null;
+  photo_url: string | null;
+  google_place_id: string | null;
   rating: number | null;
-  display_order: number | null;
+  sort_order: number | null;
   created_at: string;
 }
 
@@ -38,49 +43,53 @@ export interface Temple {
   name: string;
   deity: string | null;
   description: string | null;
-  image_url: string | null;
-  significance: string | null;
+  distance_from_center_km: number | null;
   timings: string | null;
   dress_code: string | null;
-  best_time_to_visit: string | null;
-  latitude: number | null;
-  longitude: number | null;
-  display_order: number | null;
+  entry_fee: number | null;
+  temple_stay_available: boolean | null;
+  stay_details: string | null;
+  stay_price_min: number | null;
+  stay_price_max: number | null;
+  booking_contact: string | null;
+  photo_url: string | null;
+  sort_order: number | null;
   created_at: string;
 }
 
-export type TransportMode = "flight" | "train" | "bus" | "car" | "ferry";
+export type TransportMode = "road" | "train" | "air" | "bus";
 
 export interface HowToReach {
   id: string;
   destination_id: string;
   mode: TransportMode;
-  title: string;
   description: string | null;
-  nearest_hub: string | null;
-  distance_km: number | null;
-  estimated_duration: string | null;
-  estimated_cost: string | null;
-  display_order: number | null;
+  distance_from_hyderabad_km: number | null;
+  duration_from_hyderabad: string | null;
+  nearest_airport: string | null;
+  nearest_railway_station: string | null;
+  tips: string | null;
   created_at: string;
 }
-
-export type HotelCategory = "budget" | "mid_range" | "luxury" | "homestay" | "resort";
 
 export interface Hotel {
   id: string;
   destination_id: string;
   name: string;
-  category: HotelCategory | null;
-  description: string | null;
-  image_url: string | null;
-  price_per_night_min: number | null;
-  price_per_night_max: number | null;
+  stars: number | null;
   rating: number | null;
+  rating_period: string | null;
+  price_min: number | null;
+  price_max: number | null;
   address: string | null;
   amenities: string[] | null;
+  ai_summary: string | null;
+  complaints: string[] | null;
+  warning_flag: boolean | null;
+  warning_reason: string | null;
+  google_place_id: string | null;
   booking_url: string | null;
-  display_order: number | null;
+  photo_url: string | null;
   created_at: string;
 }
 
@@ -88,13 +97,15 @@ export interface Activity {
   id: string;
   destination_id: string;
   name: string;
-  description: string | null;
   category: string | null;
-  image_url: string | null;
-  duration: string | null;
-  price_range: string | null;
-  difficulty_level: string | null;
-  display_order: number | null;
+  description: string | null;
+  duration_hours: number | null;
+  price_per_person: number | null;
+  family_friendly: boolean | null;
+  age_restriction: string | null;
+  operator_name: string | null;
+  booking_required: boolean | null;
+  sort_order: number | null;
   created_at: string;
 }
 
@@ -104,34 +115,51 @@ export interface Media {
   id: string;
   destination_id: string;
   media_type: MediaType;
+  title: string | null;
   url: string;
   thumbnail_url: string | null;
-  caption: string | null;
-  credit: string | null;
-  display_order: number | null;
+  author: string | null;
+  duration_seconds: number | null;
+  view_count: number | null;
+  published_at: string | null;
   created_at: string;
+}
+
+export interface ItineraryDaySlot {
+  time_of_day: "morning" | "afternoon" | "evening";
+  activity: string;
+  notes?: string;
+}
+
+export interface ItineraryDay {
+  day: number;
+  title: string;
+  slots: ItineraryDaySlot[];
+}
+
+export interface ItineraryPlan {
+  days: ItineraryDay[];
+  summary?: string;
 }
 
 export interface AiItinerary {
   id: string;
   destination_id: string;
-  origin_city: string | null;
-  trip_days: number | null;
-  travelers_count: number | null;
-  budget_level: string | null;
-  itinerary_json: Record<string, unknown> | null;
+  days_count: number | null;
+  trip_type: string | null;
+  plan_json: ItineraryPlan | null;
+  highlights: string[] | null;
   generated_at: string;
-  created_at: string;
 }
 
 export interface TollRoute {
   id: string;
   destination_id: string;
   origin_city: string;
-  route_name: string | null;
   distance_km: number | null;
-  toll_cost: number | null;
-  vehicle_type: string | null;
+  toll_estimate_rs: number | null;
+  route_description: string | null;
+  via_cities: string[] | null;
   created_at: string;
 }
 

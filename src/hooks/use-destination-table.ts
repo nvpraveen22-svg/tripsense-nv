@@ -14,16 +14,18 @@ interface UseDestinationTableResult<T extends TableName> {
   data: Row<T>[];
   loading: boolean;
   error: string | null;
+  refetch: () => void;
 }
 
 export function useDestinationTable<T extends TableName>(
   table: T,
   destinationId: string | undefined,
-  orderColumn: string = "display_order"
+  orderColumn: string = "created_at"
 ): UseDestinationTableResult<T> {
   const [data, setData] = useState<Row<T>[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
     if (!destinationId) return;
@@ -53,7 +55,12 @@ export function useDestinationTable<T extends TableName>(
     return () => {
       cancelled = true;
     };
-  }, [table, destinationId, orderColumn]);
+  }, [table, destinationId, orderColumn, reloadToken]);
 
-  return { data, loading, error };
+  return {
+    data,
+    loading,
+    error,
+    refetch: () => setReloadToken((n) => n + 1),
+  };
 }

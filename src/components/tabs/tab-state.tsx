@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
+import { RotateCw } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 
 interface TabStateProps {
   loading: boolean;
@@ -9,6 +11,7 @@ interface TabStateProps {
   emptyTitle?: string;
   emptyDescription?: string;
   skeletonCount?: number;
+  onRetry?: () => void;
   children: ReactNode;
 }
 
@@ -19,6 +22,7 @@ export function TabState({
   emptyTitle = "Nothing here yet",
   emptyDescription = "We're still gathering this information.",
   skeletonCount = 3,
+  onRetry,
   children,
 }: TabStateProps) {
   if (loading) {
@@ -35,7 +39,20 @@ export function TabState({
     return (
       <Alert variant="destructive">
         <AlertTitle>Something went wrong</AlertTitle>
-        <AlertDescription>{error}</AlertDescription>
+        <AlertDescription className="flex flex-col gap-2">
+          <span>{error}</span>
+          {onRetry && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-fit gap-1.5"
+              onClick={onRetry}
+            >
+              <RotateCw className="size-3.5" />
+              Retry
+            </Button>
+          )}
+        </AlertDescription>
       </Alert>
     );
   }

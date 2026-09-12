@@ -1,88 +1,126 @@
-import Image from "next/image";
-import { Clock, Star, Ticket } from "lucide-react";
+"use client";
+
+import { useMemo, useState } from "react";
+import { Clock, MapPin, Ticket } from "lucide-react";
 import { useDestinationTable } from "@/hooks/use-destination-table";
+import { extractLabeled } from "@/lib/parse-notes";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TabState } from "@/components/tabs/tab-state";
+import { StarRating } from "@/components/tabs/star-rating";
+import { CategoryFilter } from "@/components/tabs/category-filter";
 
 interface AttractionsTabProps {
   destinationId: string;
 }
 
 export function AttractionsTab({ destinationId }: AttractionsTabProps) {
-  const { data, loading, error } = useDestinationTable(
+  const { data, loading, error, refetch } = useDestinationTable(
     "attractions",
-    destinationId
+    destinationId,
+    "sort_order"
+  );
+  const [category, setCategory] = useState("all");
+
+  const categories = useMemo(
+    () => Array.from(new Set(data.map((a) => a.category).filter((c): c is string => !!c))),
+    [data]
+  );
+
+  const filtered = useMemo(
+    () => (category === "all" ? data : data.filter((a) => a.category === category)),
+    [data, category]
   );
 
   return (
-    <TabState
-      loading={loading}
-      error={error}
-      empty={data.length === 0}
-      emptyTitle="No attractions listed yet"
-      emptyDescription="We're curating attractions for this destination."
-    >
-      <div className="flex flex-col gap-3">
-        {data.map((attraction) => (
-          <Card key={attraction.id} className="overflow-hidden" size="sm">
-            <div className="flex gap-3 px-(--card-spacing)">
-              {attraction.image_url ? (
-                <div className="relative size-20 shrink-0 overflow-hidden rounded-lg bg-muted">
-                  <Image
-                    src={attraction.image_url}
-                    alt={attraction.name}
-                    fill
-                    sizes="80px"
-                    className="object-cover"
-                  />
-                </div>
-              ) : (
-                <div className="flex size-20 shrink-0 items-center justify-center rounded-lg bg-muted text-2xl">
-                  🏞️
-                </div>
-              )}
-              <CardContent className="flex flex-1 flex-col gap-1 p-0">
-                <div className="flex items-start justify-between gap-2">
-                  <span className="text-sm font-medium text-foreground">
-                    {attraction.name}
-                  </span>
-                  {attraction.rating != null && (
-                    <span className="flex items-center gap-0.5 text-xs font-medium text-accent-foreground">
-                      <Star className="size-3 fill-current" />
-                      {attraction.rating}
+    <div className="flex flex-col gap-3">
+      {categories.length > 0 && (
+        <CategoryFilter categories={categories} active={category} onChange={setCategory} />
+      )}
+
+      <TabState
+        loading={loading}
+        error={error}
+        empty={filtered.length === 0}
+        emptyTitle="No attractions listed yet"
+        emptyDescription="We're curating attractions for this destination."
+        onRetry={refetch}
+      >
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {filtered.map((attraction) => {
+            const { value: bestTime, rest: withoutBestTime } = extractLabeled(
+              attraction.description,
+              "Best time to visit"
+            );
+            const { value: tip, rest: description } = extractLabeled(
+              withoutBestTime,
+              "Tip"
+            );
+
+            return (
+              <Card key={attraction.id}>
+                <CardContent className="flex flex-col gap-2 pt-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="text-sm font-medium text-foreground">
+                      {attraction.name}
                     </span>
+                    {attraction.rating != null && (
+                      <StarRating value={attraction.rating} showValue={false} />
+                    )}
+                  </div>
+
+                  {attraction.category && (
+                    <Badge variant="secondary" className="w-fit capitalize">
+                      {attraction.category}
+                    </Badge>
                   )}
-                </div>
-                {attraction.category && (
-                  <Badge variant="secondary" className="w-fit">
-                    {attraction.category}
-                  </Badge>
-                )}
-                {attraction.description && (
-                  <p className="line-clamp-2 text-xs text-muted-foreground">
-                    {attraction.description}
-                  </p>
-                )}
-                <div className="mt-auto flex flex-wrap gap-3 pt-1 text-xs text-muted-foreground">
-                  {attraction.visit_duration_minutes != null && (
-                    <span className="flex items-center gap-1">
-                      <Clock className="size-3" />
-                      {attraction.visit_duration_minutes} min
-                    </span>
+
+                  {description && (
+                    <p className="text-xs leading-relaxed text-muted-foreground">
+                      {description}
+                    </p>
                   )}
-                  {attraction.entry_fee && (
+
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                    {attraction.distance_from_center_km != null && (
+                      <span className="flex items-center gap-1">
+                        <MapPin className="size-3" />
+                        {attraction.distance_from_center_km} km
+                      </span>
+                    )}
+                    {attraction.timings && (
+                      <span className="flex items-center gap-1">
+                        <Clock className="size-3" />
+                        {attraction.timings}
+                      </span>
+                    )}
                     <span className="flex items-center gap-1">
                       <Ticket className="size-3" />
-                      {attraction.entry_fee}
+                      {attraction.entry_fee_adult === 0
+                        ? "Free"
+                        : attraction.entry_fee_adult != null
+                          ? `₹${attraction.entry_fee_adult}`
+                          : "—"}
                     </span>
+                  </div>
+
+                  {bestTime && (
+                    <Badge variant="outline" className="w-fit">
+                      Best time: {bestTime}
+                    </Badge>
                   )}
-                </div>
-              </CardContent>
-            </div>
-          </Card>
-        ))}
-      </div>
-    </TabState>
+
+                  {tip && (
+                    <p className="rounded-lg bg-accent px-2 py-1.5 text-xs text-accent-foreground">
+                      💡 {tip}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </TabState>
+    </div>
   );
 }
