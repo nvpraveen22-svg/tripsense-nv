@@ -20,7 +20,7 @@ interface GalleryPhoto {
   caption: string;
 }
 
-function VideoThumbnail({ id, title }: { id: string; title: string }) {
+function VideoThumbnail({ id, title, desc }: { id: string; title: string; desc: string }) {
   const [src, setSrc] = useState(`https://img.youtube.com/vi/${id}/maxresdefault.jpg`);
 
   return (
@@ -43,7 +43,10 @@ function VideoThumbnail({ id, title }: { id: string; title: string }) {
           <PlayCircle className="size-9 text-white drop-shadow" />
         </span>
       </div>
-      <span className="line-clamp-2 text-xs font-medium text-foreground">{title}</span>
+      <div className="flex flex-col gap-0.5">
+        <span className="line-clamp-2 text-xs font-medium text-foreground">{title}</span>
+        <span className="line-clamp-1 text-xs text-muted-foreground">{desc}</span>
+      </div>
     </a>
   );
 }
@@ -125,7 +128,12 @@ export function MediaTab({ destinationId, destinationName, destinationSlug }: Me
         ) : (
           <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
             {videos.map((video) => (
-              <VideoThumbnail key={video.id} id={video.id} title={video.title} />
+              <VideoThumbnail
+                key={video.id}
+                id={video.id}
+                title={video.title}
+                desc={video.desc}
+              />
             ))}
           </div>
         )}
