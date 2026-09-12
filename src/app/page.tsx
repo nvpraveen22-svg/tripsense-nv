@@ -13,7 +13,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -24,7 +23,6 @@ export default function Home() {
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [originCity, setOriginCity] = useState("Hyderabad");
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
 
   useEffect(() => {
@@ -57,14 +55,14 @@ export default function Home() {
 
   function handleSelect(slug: string) {
     setSelectedSlug(slug);
-    const params = new URLSearchParams({ origin: originCity || "Hyderabad" });
+    const params = new URLSearchParams({ origin: "Hyderabad" });
     router.push(`/destination/${slug}?${params.toString()}`);
   }
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
-        <div className="mx-auto flex max-w-md items-center gap-2 px-4 py-4">
+        <div className="mx-auto flex max-w-7xl items-center gap-2 px-4 py-4 sm:px-6 lg:px-8">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
             <MapPin className="size-5" strokeWidth={2.5} />
           </span>
@@ -79,7 +77,7 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 py-6">
+      <main className="mx-auto flex w-full max-w-7xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
         <section className="flex flex-col gap-1.5">
           <div className="flex items-center gap-1.5 text-secondary">
             <Sparkles className="size-4" />
@@ -98,17 +96,6 @@ export default function Home() {
 
         <Card>
           <CardContent className="flex flex-col gap-5 pt-1">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="origin-city">Origin city</Label>
-              <Input
-                id="origin-city"
-                value={originCity}
-                onChange={(e) => setOriginCity(e.target.value)}
-                placeholder="Hyderabad"
-                autoComplete="address-level2"
-              />
-            </div>
-
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="destination-select">Destination</Label>
               {loading ? (
@@ -161,7 +148,7 @@ export default function Home() {
                 Popular destinations
               </span>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {destinations.map((destination) => (
                 <button
                   key={destination.id}
