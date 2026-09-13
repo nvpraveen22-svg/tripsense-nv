@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Plane,
   TrainFront,
@@ -27,7 +27,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { TabState } from "@/components/tabs/tab-state";
 import { cn } from "@/lib/utils";
-import type { Destination, FlightEstimate, RailEstimate, RoadEstimate, TransportMode } from "@/types";
+import type {
+  AiRoadRoute,
+  Destination,
+  FlightEstimate,
+  RailEstimate,
+  RoadEstimate,
+  TransportMode,
+} from "@/types";
 
 interface HowToReachTabProps {
   destination: Destination;
@@ -91,6 +98,10 @@ export function HowToReachTab({ destination, originCity }: HowToReachTabProps) {
   const [travelLoading, setTravelLoading] = useState(false);
   const [travelRefreshing, setTravelRefreshing] = useState(false);
   const [travelError, setTravelError] = useState<string | null>(null);
+
+  const [aiRoadRoutes, setAiRoadRoutes] = useState<AiRoadRoute[] | null>(null);
+  const [aiRoadLoading, setAiRoadLoading] = useState(false);
+  const [aiRoadError, setAiRoadError] = useState<string | null>(null);
 
   const nearestStation = useMemo(() => {
     const row = routes.find((r) => r.nearest_railway_station);
@@ -169,6 +180,23 @@ export function HowToReachTab({ destination, originCity }: HowToReachTabProps) {
   const fuelCost = distance != null ? (distance / mileage) * fuelPrice : null;
   const totalCost = fuelCost != null ? fuelCost + tollCost : null;
   const tollBreakdown = parseTollBreakdown(tollRoute?.route_description ?? null);
+
+  useEffect(() => {
+    if (loading) return;
+    if (mode !== "road") return;
+    if (modeRows.length > 0) return;
+    if (aiRoadRoutes !== null) return;
+
+    setAiRoadLoading(true);
+    fetch(`/api/road-routes/${destination.slug}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.routes) setAiRoadRoutes(data.routes);
+        else setAiRoadError("Couldn't load route suggestions.");
+      })
+      .catch(() => setAiRoadError("Couldn't load route suggestions."))
+      .finally(() => setAiRoadLoading(false));
+  }, [loading, mode, modeRows.length, aiRoadRoutes, destination.slug]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -426,7 +454,7 @@ export function HowToReachTab({ destination, originCity }: HowToReachTabProps) {
       <TabState
         loading={loading}
         error={error}
-        empty={modeRows.length === 0}
+        empty={mode !== "road" && modeRows.length === 0}
         emptyTitle="No routes listed yet"
         emptyDescription="We're gathering how-to-reach details for this destination."
         onRetry={refetch}
@@ -485,6 +513,69 @@ export function HowToReachTab({ destination, originCity }: HowToReachTabProps) {
               </Card>
             );
           })}
+
+          {mode === "road" && modeRows.length === 0 && (
+            <>
+              {aiRoadLoading && (
+                <div className="flex flex-col gap-3 md:grid md:grid-cols-3 md:gap-4">
+                  <Skeleton className="h-48 w-full rounded-xl" />
+                  <Skeleton className="h-48 w-full rounded-xl" />
+                  <Skeleton className="h-48 w-full rounded-xl" />
+                </div>
+              )}
+
+              {aiRoadError && (
+                <Alert variant="destructive">
+                  <AlertTitle>Couldn&apos;t load route suggestions</AlertTitle>
+                  <AlertDescription>{aiRoadError}</AlertDescription>
+                </Alert>
+              )}
+
+              {aiRoadRoutes && (
+                <>
+                  <div className="flex flex-col gap-4 md:grid md:grid-cols-3">
+                    {aiRoadRoutes.map((route) => (
+                      <Card key={route.origin_city}>
+                        <CardContent className="flex flex-col gap-2 pt-1">
+                          <span className="text-sm font-medium text-foreground">
+                            🚗 From {route.origin_city}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {route.distance_km} km · ~{route.drive_hours}h drive
+                          </span>
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-xs text-muted-foreground">Best route</span>
+                            <span className="text-xs text-foreground">{route.best_route}</span>
+                          </div>
+                          {route.rest_stops.length > 0 && (
+                            <div className="flex flex-col gap-1">
+                              <span className="text-xs text-muted-foreground">Rest stops</span>
+                              <PillRow items={route.rest_stops} />
+                            </div>
+                          )}
+                          <p className="rounded-lg bg-accent px-2 py-1.5 text-xs text-accent-foreground">
+                            💡 {route.tips}
+                          </p>
+                          <a
+                            href={`https://www.google.com/maps/dir/${encodeURIComponent(route.origin_city)}/${encodeURIComponent(destination.name)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={buttonVariants({ variant: "outline", size: "sm", className: "w-full gap-1.5" })}
+                          >
+                            <MapPin className="size-4" />
+                            🗺️ Open in Google Maps
+                          </a>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    ⚡ AI suggested routes · not verified
+                  </span>
+                </>
+              )}
+            </>
+          )}
 
           {mode === "road" && roadOrigins.length > 0 && (
             <Card className="border-primary/30 bg-primary/5">

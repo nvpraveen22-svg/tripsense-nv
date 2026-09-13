@@ -257,6 +257,15 @@ export interface TravelEstimate {
   generated_at: string;
 }
 
+export interface AiRoadRoute {
+  origin_city: string;
+  distance_km: number;
+  drive_hours: number;
+  best_route: string;
+  rest_stops: string[];
+  tips: string;
+}
+
 export interface TollRoute {
   id: string;
   destination_id: string;
