@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase-admin";
 import type { RoadEstimate, RailEstimate, FlightEstimate } from "@/types";
 
 export const runtime = "nodejs";
+export const maxDuration = 30; // seconds — Vercel default is 10s which Gemini can exceed
 
 // gemini-2.0-flash is retired for this API key (confirmed via a live call:
 // 404 "no longer available", same as gemini-1.5-flash and gemini-2.5-flash
@@ -265,53 +266,60 @@ Return a JSON object with exactly this shape:
 
 All costs in Indian Rupees (₹). Fuel cost assumes a car doing 15 km/litre at ₹103/litre. Return ONLY valid JSON, no markdown, no explanation.`;
 
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: MODEL_NAME,
-      generationConfig: {
-        responseMimeType: "application/json",
-        responseSchema,
-      },
-    });
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({
+    model: MODEL_NAME,
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema,
+    },
+  });
 
-    const result = await model.generateContent(prompt);
-    const parsed: { road: RoadEstimate; rail: RailEstimate; flight: FlightEstimate } = JSON.parse(
-      result.response.text()
-    );
-    const generatedAt = new Date().toISOString();
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const result = await model.generateContent(prompt);
+      const parsed: { road: RoadEstimate; rail: RailEstimate; flight: FlightEstimate } = JSON.parse(
+        result.response.text()
+      );
+      const generatedAt = new Date().toISOString();
 
-    const supabase = createAdminClient();
-    const { error: upsertError } = await supabase.from("travel_estimates").upsert(
-      {
-        destination_id: destination.id,
-        origin_city: origin,
-        road_json: parsed.road,
-        rail_json: parsed.rail,
-        flight_json: parsed.flight,
+      const supabase = createAdminClient();
+      const { error: upsertError } = await supabase.from("travel_estimates").upsert(
+        {
+          destination_id: destination.id,
+          origin_city: origin,
+          road_json: parsed.road,
+          rail_json: parsed.rail,
+          flight_json: parsed.flight,
+          generated_at: generatedAt,
+        },
+        { onConflict: "destination_id,origin_city" }
+      );
+
+      if (upsertError) {
+        console.error("[travel-estimate] upsert failed:", upsertError.message);
+      }
+
+      return NextResponse.json({
+        road: parsed.road,
+        rail: parsed.rail,
+        flight: parsed.flight,
         generated_at: generatedAt,
-      },
-      { onConflict: "destination_id,origin_city" }
-    );
-
-    if (upsertError) {
-      console.error("[travel-estimate] upsert failed:", upsertError.message);
+        cached: false,
+        saved: !upsertError,
+      });
+    } catch (err) {
+      lastErr = err;
+      const message = err instanceof Error ? err.message : String(err);
+      console.warn(`[travel-estimate] attempt ${attempt} failed:`, message);
+      if (attempt < 2) await new Promise((r) => setTimeout(r, 1000));
     }
-
-    return NextResponse.json({
-      road: parsed.road,
-      rail: parsed.rail,
-      flight: parsed.flight,
-      generated_at: generatedAt,
-      cached: false,
-      saved: !upsertError,
-    });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error("[travel-estimate] generation failed:", message);
-    return NextResponse.json(
-      { error: "Couldn't generate travel estimates right now. Please try again in a moment." },
-      { status: 502 }
-    );
   }
+
+  console.error("[travel-estimate] all attempts failed:", lastErr);
+  return NextResponse.json(
+    { error: "Couldn't generate travel estimates right now. Please try again in a moment." },
+    { status: 502 }
+  );
 }
