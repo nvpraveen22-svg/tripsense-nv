@@ -153,6 +153,91 @@ export const DESTINATION_VIDEOS: Record<string, DestinationVideo[]> = {
       desc: "Borra Caves & scenic views",
     },
   ],
+  mussoorie: [
+    {
+      id: "qzJgBZ8BsLE",
+      title: "Mussoorie Complete Travel Guide",
+      desc: "Best sights, stays & Mall Road tips",
+    },
+    {
+      id: "UFBzkflQ8Z4",
+      title: "Mussoorie 2-Day Itinerary",
+      desc: "Complete trip plan & tourist places",
+    },
+    {
+      id: "tu63FgctmNA",
+      title: "Mussoorie Travel Guide (Hindi)",
+      desc: "Tourist places & budget breakdown",
+    },
+  ],
+  pachmarhi: [
+    {
+      id: "hox3bJr8lXE",
+      title: "Pachmarhi Complete Travel Guide",
+      desc: "Long weekend trip & budget breakdown",
+    },
+    {
+      id: "WQ9MjENdpfA",
+      title: "Pachmarhi Hill Station Vlog (Hindi)",
+      desc: "Tourist places & tour guide",
+    },
+    {
+      id: "KG-jXrFJ5E0",
+      title: "Pachmarhi Tourist Places & Budget",
+      desc: "Itinerary & travel guide",
+    },
+  ],
+  mahabalipuram: [
+    {
+      id: "d7vDQlPc3bY",
+      title: "Mahabalipuram Travel Guide",
+      desc: "UNESCO World Heritage Site — places to visit",
+    },
+    {
+      id: "uD7RTeX4rFo",
+      title: "Mahabalipuram Shore Temple Guide",
+      desc: "Krishna's Butter Ball & Five Rathas",
+    },
+    {
+      id: "4uM86-TVsy4",
+      title: "Mahabalipuram Complete Tour Guide",
+      desc: "1,600-year-old historic Pallava site",
+    },
+  ],
+  darjeeling: [
+    {
+      id: "WnuQGGyQEno",
+      title: "Darjeeling 3-Day Travel Guide",
+      desc: "Full travel experience & itinerary",
+    },
+    {
+      id: "VtFbGEEkUFY",
+      title: "Darjeeling & Sittong 4-Day Guide",
+      desc: "Full budget tour plan",
+    },
+    {
+      id: "Q_ZE18cJ2c4",
+      title: "Exploring the Hills of Darjeeling",
+      desc: "Ultimate travel vlog",
+    },
+  ],
+  puri: [
+    {
+      id: "SfAYUKS0fxU",
+      title: "Puri Complete 3-Day Travel Guide",
+      desc: "Jagannath Dham & Chaar Dham yatra",
+    },
+    {
+      id: "ByBd_kZhftU",
+      title: "Odisha Vlog — Puri Beach & Chilka Lake",
+      desc: "Jagannath Temple cinematic travel guide",
+    },
+    {
+      id: "X7jWfp0mkEk",
+      title: "Jagannath Puri Travel Guide (Hindi)",
+      desc: "Temple history & full trip guide",
+    },
+  ],
   pondicherry: [
     {
       id: "p7TtHzyQA8o",
