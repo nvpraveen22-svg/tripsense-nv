@@ -48,8 +48,9 @@ const destinationQueries = {
   mussoorie: "Mussoorie hill station Himalayas India",
   pachmarhi: "Pachmarhi hills Madhya Pradesh India",
   mahabalipuram: "Mahabalipuram shore temple India",
-  darjeeling: "Darjeeling tea gardens Himalayas India",
+  darjeeling: "Darjeeling India mountains",
   puri: "Puri beach Odisha India",
+  mulki: "surfing beach India",
 };
 
 const attractionQueries = {
@@ -122,8 +123,8 @@ const attractionQueries = {
 
   // Mussoorie
   "Kempty Falls": "waterfall pool hills India",
-  "Mall Road": "Mall Road Mussoorie hill town",
-  "Gun Hill": "cable car hill viewpoint India",
+  "Mall Road": "shopping street hill station India",
+  "Gun Hill": "cable car mountain India",
   "Camel's Back Road": "walking trail hills sunset India",
   "Lal Tibba": "Himalayan mountain viewpoint India",
   "Company Garden (Municipal Garden)": "hill station garden lake India",
@@ -135,7 +136,7 @@ const attractionQueries = {
   "Pandav Caves": "rock cut caves India",
   Dhoopgarh: "hilltop sunset viewpoint India",
   "Apsara Vihar (Fairy Pool)": "natural rock pool forest India",
-  "Handi Khoh": "forest gorge canyon India",
+  "Handi Khoh": "forest gorge India",
   "Priyadarshini Point (Forsyth Point)": "plateau viewpoint hills India",
 
   // Mahabalipuram
@@ -148,9 +149,9 @@ const attractionQueries = {
 
   // Darjeeling
   "Tiger Hill": "Kanchenjunga sunrise mountain India",
-  "Batasia Loop": "toy train spiral loop hills India",
-  "Padmaja Naidu Himalayan Zoological Park": "red panda zoo Himalayas India",
-  "Peace Pagoda": "white pagoda hilltop India",
+  "Batasia Loop": "toy train mountain railway India",
+  "Padmaja Naidu Himalayan Zoological Park": "red panda India",
+  "Peace Pagoda": "Japanese peace pagoda",
   "Darjeeling Ropeway": "cable car tea garden hills India",
   "Happy Valley Tea Estate": "tea garden plantation Darjeeling India",
   "Observatory Hill": "hilltop prayer flags forest India",
@@ -158,9 +159,17 @@ const attractionQueries = {
   // Puri
   "Puri Beach (Golden Beach)": "golden beach fishing boats India",
   "Konark Sun Temple": "Konark Sun Temple India",
-  "Chilika Lake": "lagoon lake birds India",
+  "Chilika Lake": "lake India birds",
   "Puri Beach Sand Art Institute": "sand sculpture beach India",
   "Raghurajpur Heritage Crafts Village": "artisan village painting India",
+
+  // Mulki
+  "Sasihithlu Beach": "beach river India",
+  "Mantra Surf Club": "surfing beach India",
+  "Shambhavi River": "river estuary kayak India",
+  "Sri Durga Parameshwari Temple": "coastal Karnataka temple India",
+  "Kadike Beach": "quiet beach coconut grove India",
+  "Pilikula Nisargadhama": "eco park botanical garden India",
 };
 
 const hotelQueries = {
@@ -227,11 +236,11 @@ const hotelQueries = {
   // Pachmarhi
   "MPT Amaltas Resort": "forest resort hills India",
   "Glen View Resort": "valley view resort India",
-  "Reyti Retreat by Ambrosia": "hill town resort India",
-  "Highland Resort Pachmarhi": "budget hotel hills India",
+  "Reyti Retreat by Ambrosia": "resort hills India",
+  "Highland Resort Pachmarhi": "hotel hills India",
 
   // Mahabalipuram
-  "Radisson Blu Resort Temple Bay Mamallapuram": "beachfront resort pool India",
+  "Radisson Blu Resort Temple Bay Mamallapuram": "beach resort India",
   "GRT Temple Bay": "beach resort India",
   "InterContinental Chennai Mahabalipuram Resort": "luxury beach resort India",
   "Ideal Beach Resort": "garden resort pool India",
@@ -247,6 +256,12 @@ const hotelQueries = {
   "Toshali Sands": "cottage resort palm grove India",
   "Hotel Lotus Eco Beach Resort": "beach hotel India",
   "Zostel Puri": "backpacker hostel beach India",
+
+  // Mulki
+  "Mantra Surf Club Stay": "surf camp beach stay India",
+  "The Kama by Nitesh Hotels": "hotel pool India",
+  "Zostel Mulki": "backpacker hostel beach India",
+  "Sea View Home Stay": "homestay coastal India",
 };
 
 const activityQueries = {
@@ -349,6 +364,13 @@ const activityQueries = {
   "Chilika Lake Dolphin Spotting Boat Ride": "dolphin boat ride lake India",
   "Pattachitra Painting Workshop": "traditional painting workshop India",
   "Jagannath Temple Heritage Walk": "temple town heritage walk India",
+
+  // Mulki
+  "Surf Lessons (Beginner)": "surf lesson beginner beach India",
+  "Kayaking on Shambhavi River": "river kayaking estuary India",
+  "Stand-Up Paddleboarding (SUP)": "stand up paddleboard river India",
+  "Sunset Boat Ride on the Estuary": "sunset boat ride river India",
+  "Yakshagana Cultural Show": "traditional dance performance India",
 };
 
 async function seedTable({

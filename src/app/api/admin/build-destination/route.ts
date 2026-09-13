@@ -278,24 +278,34 @@ Generate a complete, realistic destination guide as a JSON object with exactly t
 
 All costs must be in Indian Rupees (numbers only, no currency symbols). Month names must be full English month names (e.g. "October"). Be realistic and specific — use real place names, real highway/route references, and real nearby airports/stations where possible. Return ONLY the JSON object, no markdown, no explanation.`;
 
-  let parsed: GeneratedPayload;
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: MODEL_NAME,
-      generationConfig: {
-        responseMimeType: "application/json",
-        responseSchema,
-      },
-    });
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({
+    model: MODEL_NAME,
+    generationConfig: {
+      responseMimeType: "application/json",
+      responseSchema,
+    },
+  });
 
-    const result = await model.generateContent(prompt);
-    parsed = JSON.parse(result.response.text());
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error("[build-destination] generation failed:", message);
+  let parsed: GeneratedPayload | undefined;
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const result = await model.generateContent(prompt);
+      parsed = JSON.parse(result.response.text());
+      break;
+    } catch (err) {
+      lastErr = err;
+      console.error(`[build-destination] attempt ${attempt} failed:`, err);
+      if (attempt < 2) await new Promise((r) => setTimeout(r, 1500));
+    }
+  }
+
+  if (!parsed) {
+    const message = lastErr instanceof Error ? lastErr.message : "Unknown error";
+    console.error("[build-destination] all attempts failed:", lastErr);
     return NextResponse.json(
-      { error: "Couldn't generate destination content right now. Please try again." },
+      { error: `Couldn't generate destination content: ${message}` },
       { status: 502 }
     );
   }
