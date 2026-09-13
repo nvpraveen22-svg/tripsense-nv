@@ -240,7 +240,18 @@ export function HowToReachTab({ destination, originCity }: HowToReachTabProps) {
       {travelError && (
         <Alert variant="destructive">
           <AlertTitle>Couldn&apos;t get estimates</AlertTitle>
-          <AlertDescription>{travelError}</AlertDescription>
+          <AlertDescription className="flex flex-col gap-2">
+            <span>{travelError}</span>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-fit gap-1.5"
+              onClick={handleTravelSubmit}
+            >
+              <RotateCw className="size-3.5" />
+              Try Again
+            </Button>
+          </AlertDescription>
         </Alert>
       )}
 

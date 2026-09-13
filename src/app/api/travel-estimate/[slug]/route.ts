@@ -307,9 +307,10 @@ All costs in Indian Rupees (â‚¹). Fuel cost assumes a car doing 15 km/litre at â
       saved: !upsertError,
     });
   } catch (err) {
-    console.error("[travel-estimate] generation failed", err);
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[travel-estimate] generation failed:", message);
     return NextResponse.json(
-      { error: "Couldn't generate travel estimates right now. Please try again." },
+      { error: "Couldn't generate travel estimates right now. Please try again in a moment." },
       { status: 502 }
     );
   }
