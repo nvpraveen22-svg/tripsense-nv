@@ -24,9 +24,9 @@ export const DESTINATION_VIDEOS: Record<string, DestinationVideo[]> = {
       desc: "Real experience — what to expect",
     },
     {
-      id: "eLydfFuVcio",
-      title: "Dandeli Kayaking & Supa Dam",
-      desc: "Water activities guide",
+      id: "uSyHWJUdLPc",
+      title: "Top 10 Things to do in Dandeli",
+      desc: "Tourist places & best rafting spots",
     },
   ],
   goa: [
