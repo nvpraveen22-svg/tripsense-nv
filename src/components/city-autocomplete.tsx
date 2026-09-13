@@ -65,7 +65,7 @@ export function CityAutocomplete({
         className="w-full"
       />
       {open && suggestions.length > 0 && (
-        <div className="absolute left-0 right-0 top-full z-10 mt-1 overflow-hidden rounded-lg border border-border bg-card shadow-md">
+        <div className="absolute z-50 w-full top-full mt-1 overflow-hidden rounded-lg border border-border bg-card shadow-md">
           {suggestions.map((city) => (
             <div
               key={city}
