@@ -45,6 +45,11 @@ const destinationQueries = {
   araku: "Araku Valley India",
   vizag: "Visakhapatnam beach Andhra Pradesh India",
   pondicherry: "Pondicherry France India",
+  mussoorie: "Mussoorie hill station Himalayas India",
+  pachmarhi: "Pachmarhi hills Madhya Pradesh India",
+  mahabalipuram: "Mahabalipuram shore temple India",
+  darjeeling: "Darjeeling tea gardens Himalayas India",
+  puri: "Puri beach Odisha India",
 };
 
 const attractionQueries = {
@@ -114,6 +119,48 @@ const attractionQueries = {
   "French Quarter (White Town)": "colonial street India",
   "Basilica of the Sacred Heart of Jesus": "gothic church India",
   "Paradise Beach": "Paradise beach Pondicherry",
+
+  // Mussoorie
+  "Kempty Falls": "waterfall pool hills India",
+  "Mall Road": "Mall Road Mussoorie hill town",
+  "Gun Hill": "cable car hill viewpoint India",
+  "Camel's Back Road": "walking trail hills sunset India",
+  "Lal Tibba": "Himalayan mountain viewpoint India",
+  "Company Garden (Municipal Garden)": "hill station garden lake India",
+  "Cloud's End": "forest viewpoint hills India",
+  "Landour Bazaar & Char Dukan": "colonial hill town bazaar India",
+
+  // Pachmarhi
+  "Bee Fall (Rajat Prapat)": "waterfall forest India",
+  "Pandav Caves": "rock cut caves India",
+  Dhoopgarh: "hilltop sunset viewpoint India",
+  "Apsara Vihar (Fairy Pool)": "natural rock pool forest India",
+  "Handi Khoh": "forest gorge canyon India",
+  "Priyadarshini Point (Forsyth Point)": "plateau viewpoint hills India",
+
+  // Mahabalipuram
+  "Shore Temple": "Shore Temple Mahabalipuram India",
+  "Pancha Rathas (Five Rathas)": "rock cut temple monolith India",
+  "Arjuna's Penance": "rock relief carving India",
+  "Krishna's Butter Ball": "giant balanced boulder India",
+  "Tiger Cave": "rock cut shrine carving India",
+  "Mahabalipuram Beach": "beach Tamil Nadu India",
+
+  // Darjeeling
+  "Tiger Hill": "Kanchenjunga sunrise mountain India",
+  "Batasia Loop": "toy train spiral loop hills India",
+  "Padmaja Naidu Himalayan Zoological Park": "red panda zoo Himalayas India",
+  "Peace Pagoda": "white pagoda hilltop India",
+  "Darjeeling Ropeway": "cable car tea garden hills India",
+  "Happy Valley Tea Estate": "tea garden plantation Darjeeling India",
+  "Observatory Hill": "hilltop prayer flags forest India",
+
+  // Puri
+  "Puri Beach (Golden Beach)": "golden beach fishing boats India",
+  "Konark Sun Temple": "Konark Sun Temple India",
+  "Chilika Lake": "lagoon lake birds India",
+  "Puri Beach Sand Art Institute": "sand sculpture beach India",
+  "Raghurajpur Heritage Crafts Village": "artisan village painting India",
 };
 
 const hotelQueries = {
@@ -170,6 +217,36 @@ const hotelQueries = {
   "The Promenade": "beachfront hotel Pondicherry",
   "Ginger Puducherry": "hotel Pondicherry",
   "Kailash Guest House": "guesthouse garden India",
+
+  // Mussoorie
+  "JW Marriott Mussoorie Walnut Grove Resort & Spa": "luxury resort mountain view India",
+  "Fortune Resort Sunrise Park": "hotel hill station India",
+  "Kasmanda Palace Heritage Hotel": "heritage palace hotel India",
+  "Zostel Mussoorie": "backpacker hostel hill town India",
+
+  // Pachmarhi
+  "MPT Amaltas Resort": "forest resort hills India",
+  "Glen View Resort": "valley view resort India",
+  "Reyti Retreat by Ambrosia": "hill town resort India",
+  "Highland Resort Pachmarhi": "budget hotel hills India",
+
+  // Mahabalipuram
+  "Radisson Blu Resort Temple Bay Mamallapuram": "beachfront resort pool India",
+  "GRT Temple Bay": "beach resort India",
+  "InterContinental Chennai Mahabalipuram Resort": "luxury beach resort India",
+  "Ideal Beach Resort": "garden resort pool India",
+
+  // Darjeeling
+  "Mayfair Darjeeling": "luxury hotel garden mountain India",
+  "Windamere Hotel": "colonial heritage hotel India",
+  "Cedar Inn": "hotel mountain view India",
+  "Zostel Darjeeling": "backpacker hostel hill town India",
+
+  // Puri
+  "Mayfair Heritage Puri": "beachfront resort garden India",
+  "Toshali Sands": "cottage resort palm grove India",
+  "Hotel Lotus Eco Beach Resort": "beach hotel India",
+  "Zostel Puri": "backpacker hostel beach India",
 };
 
 const activityQueries = {
@@ -237,6 +314,41 @@ const activityQueries = {
   "Boating to Paradise Beach": "boat ride beach India",
   "Scuba Diving": "scuba diving India coast",
   "Pondicherry Heritage Walk": "heritage walk colonial India",
+
+  // Mussoorie
+  "Cable Car Ride to Gun Hill": "cable car mountain ride India",
+  "Trekking to Cloud's End": "forest trek hills India",
+  "Paragliding near Mussoorie": "paragliding mountain valley India",
+  "Horse Riding on Camel's Back Road": "horse riding hill road India",
+  "Skating at Mussoorie Skating Rink": "roller skating rink India",
+
+  // Pachmarhi
+  "Jeep Safari in Satpura Tiger Reserve": "jeep safari forest tiger India",
+  "Walking Safari": "walking safari forest India",
+  "Trekking to Dhoopgarh Sunset Point": "hilltop sunset trek India",
+  "Boating at Pachmarhi Lake": "lake boating hills India",
+  "Cave Exploration Tour": "rock cave exploration India",
+
+  // Mahabalipuram
+  "Stone Sculpture Workshop Visit": "stone sculpture carving India",
+  "Sunrise Photography at Shore Temple": "sunrise temple beach India",
+  "Cycling Tour of Heritage Monuments": "cycling heritage monument India",
+  "Beach Horse Riding": "horse riding beach India",
+  "Crocodile Bank Visit": "crocodile sanctuary India",
+
+  // Darjeeling
+  "Darjeeling Himalayan Railway Joy Ride": "toy train mountain railway India",
+  "Tea Estate Tour & Tasting": "tea estate plantation India",
+  "Sunrise Trip to Tiger Hill": "sunrise mountain viewpoint India",
+  "Himalayan Mountaineering Institute Museum Visit": "mountaineering museum India",
+  "Paragliding near Darjeeling": "paragliding hills India",
+
+  // Puri
+  "Sunrise Beach Walk & Fishing Village Visit": "fishing boats beach sunrise India",
+  "Konark Sun Temple Day Trip": "Konark Sun Temple India",
+  "Chilika Lake Dolphin Spotting Boat Ride": "dolphin boat ride lake India",
+  "Pattachitra Painting Workshop": "traditional painting workshop India",
+  "Jagannath Temple Heritage Walk": "temple town heritage walk India",
 };
 
 async function seedTable({
