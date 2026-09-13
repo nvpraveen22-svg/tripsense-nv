@@ -11,6 +11,23 @@ export interface DestinationVideo {
 }
 
 export const DESTINATION_VIDEOS: Record<string, DestinationVideo[]> = {
+  mulki: [
+    {
+      id: "VHvIe9H6ea8",
+      title: "5 Days of Surfing at Mantra Surf Club",
+      desc: "Vlog — beginner surf course experience",
+    },
+    {
+      id: "Y4_6Z5LNA8w",
+      title: "Surfing in Mulki",
+      desc: "Travel vlog — Karnataka's surf town",
+    },
+    {
+      id: "qqK3o9qqLpE",
+      title: "Things to Do in Mulki Beyond Surfing",
+      desc: "Beaches, food & the town's laid-back side",
+    },
+  ],
   dandeli: [
     {
       // Original id (VARwZYaWeKg) fails oEmbed verification (401, unembeddable) - swapped.
