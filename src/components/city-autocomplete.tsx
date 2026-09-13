@@ -43,7 +43,11 @@ export function CityAutocomplete({
   }
 
   return (
-    <div ref={containerRef} className={cn("relative", className)}>
+    <div
+      ref={containerRef}
+      className={cn("relative", className)}
+      style={{ isolation: "isolate" }}
+    >
       <Input
         id={id}
         value={value}
@@ -65,17 +69,17 @@ export function CityAutocomplete({
         className="w-full"
       />
       {open && suggestions.length > 0 && (
-        <div className="absolute z-50 w-full top-full mt-1 overflow-hidden rounded-lg border border-border bg-card shadow-md">
+        <ul className="absolute left-0 right-0 top-full mt-1 z-[100] overflow-hidden rounded-lg border border-border bg-background shadow-lg">
           {suggestions.map((city) => (
-            <div
+            <li
               key={city}
               onClick={() => selectCity(city)}
               className="cursor-pointer px-3 py-2 text-sm hover:bg-accent"
             >
               {city}
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );

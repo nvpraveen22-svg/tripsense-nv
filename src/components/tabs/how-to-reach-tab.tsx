@@ -200,7 +200,7 @@ export function HowToReachTab({ destination, originCity }: HowToReachTabProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <Card className="border-primary/30 bg-primary/5">
+      <Card className="border-primary/30 bg-primary/5 overflow-visible">
         <CardContent className="flex flex-col gap-2 pt-1">
           <div className="flex items-center gap-1.5 text-primary">
             <MapPin className="size-4" />
