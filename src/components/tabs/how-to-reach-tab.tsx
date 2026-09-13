@@ -146,6 +146,9 @@ export function HowToReachTab({ destination, originCity }: HowToReachTabProps) {
   const googleFlightsUrl = travelOrigin
     ? `https://www.google.com/travel/flights?q=${encodeURIComponent(`flights from ${travelOrigin} to ${destination.name}`)}`
     : "#";
+  const googleMapsUrl = travelOrigin
+    ? `https://www.google.com/maps/dir/${encodeURIComponent(travelOrigin)}/${encodeURIComponent(destination.name)}`
+    : "#";
 
   const modeRows = useMemo(
     () => routes.filter((r) => r.mode === mode),
@@ -257,6 +260,15 @@ export function HowToReachTab({ destination, originCity }: HowToReachTabProps) {
                 <p className="rounded-lg bg-accent px-2 py-1.5 text-xs text-accent-foreground">
                   💡 {travelResult.road.tips}
                 </p>
+                <a
+                  href={googleMapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={buttonVariants({ variant: "outline", size: "sm", className: "w-full gap-1.5" })}
+                >
+                  <MapPin className="size-4" />
+                  🗺️ Open in Google Maps
+                </a>
               </CardContent>
             </Card>
 
