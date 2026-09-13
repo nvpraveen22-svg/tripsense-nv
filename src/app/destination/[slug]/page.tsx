@@ -21,7 +21,6 @@ import { HowToReachTab } from "@/components/tabs/how-to-reach-tab";
 import { StayTab } from "@/components/tabs/stay-tab";
 import { ActivitiesTab } from "@/components/tabs/activities-tab";
 import { BudgetTab } from "@/components/tabs/budget-tab";
-import { TravelTab } from "@/components/tabs/travel-tab";
 import { MediaTab } from "@/components/tabs/media-tab";
 import { AiPlanTab } from "@/components/tabs/ai-plan-tab";
 import { InsightsTab } from "@/components/tabs/insights-tab";
@@ -35,7 +34,6 @@ const TABS = [
   { value: "stay", label: "Stay" },
   { value: "activities", label: "Activities" },
   { value: "budget", label: "Budget" },
-  { value: "travel", label: "Travel" },
   { value: "media", label: "Media" },
   { value: "ai-plan", label: "AI Plan" },
   { value: "insights", label: "Insights" },
@@ -181,10 +179,7 @@ export default function DestinationPage({
             <TemplesTab destinationId={destination.id} />
           </TabsContent>
           <TabsContent value="how-to-reach">
-            <HowToReachTab
-              destinationId={destination.id}
-              originCity={originCity}
-            />
+            <HowToReachTab destination={destination} originCity={originCity} />
           </TabsContent>
           <TabsContent value="stay">
             <StayTab destinationId={destination.id} />
@@ -194,9 +189,6 @@ export default function DestinationPage({
           </TabsContent>
           <TabsContent value="budget">
             <BudgetTab destination={destination} originCity={originCity} />
-          </TabsContent>
-          <TabsContent value="travel">
-            <TravelTab destination={destination} />
           </TabsContent>
           <TabsContent value="media">
             <MediaTab
