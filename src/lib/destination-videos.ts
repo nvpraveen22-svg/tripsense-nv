@@ -73,8 +73,8 @@ export const DESTINATION_VIDEOS: Record<string, DestinationVideo[]> = {
     },
     {
       id: "xugkXYGT7uQ",
-      title: "South India — Mysore, Coorg & Ooty",
-      desc: "8-day itinerary guide",
+      title: "Mysore, Coorg & Ooty 8-Day Guide",
+      desc: "Complete South India itinerary",
     },
     {
       id: "zCFJ2LRotoI",
@@ -89,14 +89,14 @@ export const DESTINATION_VIDEOS: Record<string, DestinationVideo[]> = {
       desc: "All tourist places covered",
     },
     {
-      id: "Vt2fKkjY9QA",
-      title: "Ooty & Coonoor Trip Guide",
-      desc: "Best places & budget tips in Hindi",
+      id: "UpWvHfHi-uU",
+      title: "Ooty, Coonoor & Kodaikanal Guide",
+      desc: "5-day South India trip from ₹12,850",
     },
     {
-      id: "UpWvHfHi-uU",
-      title: "Complete Guide: Ooty, Coonoor & Kodaikanal",
-      desc: "5-day South India trip from ₹12,850",
+      id: "Vt2fKkjY9QA",
+      title: "Ooty & Coonoor Complete Trip",
+      desc: "Best places & budget tips in Hindi",
     },
   ],
   kodaikanal: [
