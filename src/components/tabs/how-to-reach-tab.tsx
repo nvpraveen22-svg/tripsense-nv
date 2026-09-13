@@ -17,6 +17,7 @@ import {
 import { useDestinationTable } from "@/hooks/use-destination-table";
 import { extractLabeled, formatInr, parseOrigin, parseTollBreakdown } from "@/lib/parse-notes";
 import { daysAgoLabel } from "@/lib/format-time";
+import { CityAutocomplete } from "@/components/city-autocomplete";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -180,11 +181,11 @@ export function HowToReachTab({ destination, originCity }: HowToReachTabProps) {
             </Label>
           </div>
           <div className="flex gap-2">
-            <Input
+            <CityAutocomplete
               id="travel-origin"
               value={travelCity}
-              onChange={(e) => setTravelCity(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleTravelSubmit()}
+              onChange={setTravelCity}
+              onSubmit={handleTravelSubmit}
               placeholder="e.g. Mumbai, Bangalore, Chennai..."
               className="flex-1"
             />
