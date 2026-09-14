@@ -25,6 +25,19 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// The YouTube Data API returns titles/channel names HTML-entity-encoded
+// (e.g. "Goa &amp; Beaches") since they're meant for embedding in HTML —
+// decode before storing so the app (which renders these as plain text,
+// not HTML) doesn't display literal "&amp;" to users.
+function decodeHtmlEntities(text: string): string {
+  return text
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">");
+}
+
 async function searchUnsplash(
   query: string,
   perPage: number,
@@ -222,8 +235,8 @@ export async function POST(request: NextRequest) {
             media_type: "video",
             url: videoUrl,
             thumbnail_url: item.snippet.thumbnails?.medium?.url ?? null,
-            title: item.snippet.title,
-            author: item.snippet.channelTitle,
+            title: decodeHtmlEntities(item.snippet.title),
+            author: decodeHtmlEntities(item.snippet.channelTitle),
           });
           if (insertError) {
             console.error(`[sync-media] video insert failed for ${dest.slug}:`, insertError.message);
