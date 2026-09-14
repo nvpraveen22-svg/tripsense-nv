@@ -87,6 +87,28 @@ const activitySchema: Schema = {
   ],
 };
 
+const templeSchema: Schema = {
+  type: SchemaType.OBJECT,
+  properties: {
+    name: { type: SchemaType.STRING },
+    deity: { type: SchemaType.STRING },
+    description: { type: SchemaType.STRING },
+    distance_from_center_km: { type: SchemaType.NUMBER },
+    timings: { type: SchemaType.STRING },
+    dress_code: { type: SchemaType.STRING },
+    entry_fee: { type: SchemaType.NUMBER },
+    temple_stay_available: { type: SchemaType.BOOLEAN },
+    stay_details: { type: SchemaType.STRING },
+    stay_price_min: { type: SchemaType.NUMBER },
+    stay_price_max: { type: SchemaType.NUMBER },
+  },
+  required: [
+    "name", "deity", "description", "distance_from_center_km", "timings",
+    "dress_code", "entry_fee", "temple_stay_available", "stay_details",
+    "stay_price_min", "stay_price_max",
+  ],
+};
+
 const howToReachSchema: Schema = {
   type: SchemaType.OBJECT,
   properties: {
@@ -140,8 +162,9 @@ const responseSchema: Schema = {
     hotels: { type: SchemaType.ARRAY, items: hotelSchema },
     activities: { type: SchemaType.ARRAY, items: activitySchema },
     how_to_reach: { type: SchemaType.ARRAY, items: howToReachSchema },
+    temples: { type: SchemaType.ARRAY, items: templeSchema },
   },
-  required: ["destination", "attractions", "hotels", "activities", "how_to_reach"],
+  required: ["destination", "attractions", "hotels", "activities", "how_to_reach", "temples"],
 };
 
 interface GeneratedDestination {
@@ -202,12 +225,27 @@ interface GeneratedHowToReach {
   tips: string;
 }
 
+interface GeneratedTemple {
+  name: string;
+  deity: string;
+  description: string;
+  distance_from_center_km: number;
+  timings: string;
+  dress_code: string;
+  entry_fee: number;
+  temple_stay_available: boolean;
+  stay_details: string;
+  stay_price_min: number;
+  stay_price_max: number;
+}
+
 interface GeneratedPayload {
   destination: GeneratedDestination;
   attractions: GeneratedAttraction[];
   hotels: GeneratedHotel[];
   activities: GeneratedActivity[];
   how_to_reach: GeneratedHowToReach[];
+  temples: GeneratedTemple[];
 }
 
 export async function POST(request: NextRequest) {
@@ -275,6 +313,7 @@ Generate a complete, realistic destination guide as a JSON object with exactly t
 - hotels: exactly 5 realistic hotels or stays spanning budget to luxury (set warning_flag true only if there's a genuine, common practical caveat for that property, e.g. remote location or seasonal closure, otherwise false with warning_reason as an empty string)
 - activities: exactly 5 things travellers can do there
 - how_to_reach: exactly 4 entries, one each for mode "road", "train", "air", and "bus", describing how to reach ${name} from Hyderabad specifically
+- temples: 3-5 temples at or near ${name} — but ONLY temples that are genuinely famous at a district, state, or national level. If ${name} has fewer than 3 such famous temples, return fewer (even zero) — do not invent or pad with generic/minor temples that aren't actually notable. For each temple set temple_stay_available honestly, and stay_details/stay_price_min/stay_price_max to empty string / 0 / 0 when no temple stay is offered.
 
 All costs must be in Indian Rupees (numbers only, no currency symbols). Month names must be full English month names (e.g. "October"). Be realistic and specific — use real place names, real highway/route references, and real nearby airports/stations where possible. Return ONLY the JSON object, no markdown, no explanation.`;
 
@@ -340,7 +379,7 @@ All costs must be in Indian Rupees (numbers only, no currency symbols). Month na
   }
 
   const destinationId = destinationRow.id;
-  const counts = { attractions: 0, hotels: 0, activities: 0, howToReach: 0 };
+  const counts = { attractions: 0, hotels: 0, activities: 0, howToReach: 0, temples: 0 };
 
   const { error: attractionsError } = await supabase.from("attractions").insert(
     parsed.attractions.map((a, i) => ({ ...a, destination_id: destinationId, sort_order: i + 1 }))
@@ -374,6 +413,17 @@ All costs must be in Indian Rupees (numbers only, no currency symbols). Month na
     console.error("[build-destination] activities insert failed:", activitiesError.message);
   } else {
     counts.activities = parsed.activities.length;
+  }
+
+  if (parsed.temples.length > 0) {
+    const { error: templesError } = await supabase.from("temples").insert(
+      parsed.temples.map((t, i) => ({ ...t, destination_id: destinationId, sort_order: i + 1 }))
+    );
+    if (templesError) {
+      console.error("[build-destination] temples insert failed:", templesError.message);
+    } else {
+      counts.temples = parsed.temples.length;
+    }
   }
 
   const { error: howToReachError } = await supabase.from("how_to_reach").insert(

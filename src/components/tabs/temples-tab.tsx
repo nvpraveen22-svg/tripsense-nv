@@ -1,33 +1,122 @@
+"use client";
+
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Clock, MapPin, Shirt, Sparkles } from "lucide-react";
 import { useDestinationTable } from "@/hooks/use-destination-table";
 import { extractLabeled } from "@/lib/parse-notes";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { TabState } from "@/components/tabs/tab-state";
 import { StarRating } from "@/components/tabs/star-rating";
+import type { Temple } from "@/types";
 
 interface TemplesTabProps {
   destinationId: string;
+  destinationSlug: string;
 }
 
-export function TemplesTab({ destinationId }: TemplesTabProps) {
-  const { data, loading, error, refetch } = useDestinationTable(
+interface DisplayTemple extends Temple {
+  isAiGenerated?: boolean;
+}
+
+export function TemplesTab({ destinationId, destinationSlug }: TemplesTabProps) {
+  const { data: temples, loading, error, refetch } = useDestinationTable(
     "temples",
     destinationId,
     "sort_order"
   );
+  const { data: attractions, loading: attractionsLoading } = useDestinationTable(
+    "attractions",
+    destinationId,
+    "sort_order"
+  );
+
+  const [aiTemples, setAiTemples] = useState<DisplayTemple[] | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const aiRequested = useRef(false);
+
+  const merged = useMemo<DisplayTemple[]>(() => {
+    const existingNames = new Set(temples.map((t) => t.name.toLowerCase()));
+    const fromAttractions: DisplayTemple[] = attractions
+      .filter((a) => a.category?.toLowerCase() === "temple")
+      .filter((a) => !existingNames.has(a.name.toLowerCase()))
+      .map((a) => ({
+        id: a.id,
+        destination_id: a.destination_id,
+        name: a.name,
+        deity: null,
+        description: a.description,
+        distance_from_center_km: a.distance_from_center_km,
+        timings: a.timings,
+        dress_code: null,
+        entry_fee: a.entry_fee_adult,
+        temple_stay_available: false,
+        stay_details: null,
+        stay_price_min: null,
+        stay_price_max: null,
+        booking_contact: null,
+        photo_url: a.photo_url,
+        sort_order: a.sort_order,
+        created_at: a.created_at,
+      }));
+    return [...temples, ...fromAttractions];
+  }, [temples, attractions]);
+
+  useEffect(() => {
+    if (loading || attractionsLoading) return;
+    if (merged.length > 0) return;
+    if (aiRequested.current) return;
+    aiRequested.current = true;
+
+    setAiLoading(true);
+    setAiError(null);
+    fetch(`/api/ai-temples/${destinationSlug}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.temples) {
+          setAiTemples(
+            (data.temples as Temple[]).map((t) => ({ ...t, isAiGenerated: data.source === "ai" }))
+          );
+        } else {
+          setAiError(data.error ?? "Couldn't find temples for this destination.");
+        }
+      })
+      .catch(() => setAiError("Couldn't find temples for this destination."))
+      .finally(() => setAiLoading(false));
+  }, [loading, attractionsLoading, merged.length, destinationSlug]);
+
+  const displayList = merged.length > 0 ? merged : aiTemples ?? [];
+  const stillDeciding = merged.length === 0 && aiTemples === null && !aiError && !aiRequested.current;
 
   return (
     <TabState
-      loading={loading}
+      loading={loading || attractionsLoading}
       error={error}
-      empty={data.length === 0}
+      empty={displayList.length === 0 && !aiLoading && !aiError && !stillDeciding}
       emptyTitle="No temples listed yet"
       emptyDescription="We're curating temple information for this destination."
       onRetry={refetch}
     >
       <div className="flex flex-col gap-3">
-        {data.map((temple) => {
+        {aiLoading && (
+          <div className="flex flex-col gap-3">
+            <p className="text-xs text-muted-foreground">🙏 Finding famous temples with AI...</p>
+            <Skeleton className="h-32 w-full rounded-xl" />
+            <Skeleton className="h-32 w-full rounded-xl" />
+          </div>
+        )}
+
+        {aiError && (
+          <Alert variant="destructive">
+            <AlertTitle>Couldn&apos;t find temples</AlertTitle>
+            <AlertDescription>{aiError}</AlertDescription>
+          </Alert>
+        )}
+
+        {displayList.map((temple) => {
           const { value: specialPuja, rest: r1 } = extractLabeled(
             temple.description,
             "Special puja"
@@ -38,9 +127,17 @@ export function TemplesTab({ destinationId }: TemplesTabProps) {
           const rating = ratingText ? Number(ratingText.split("/")[0]) : null;
 
           return (
-            <Card key={temple.id}>
+            <Card key={temple.id} className="relative">
+              {temple.isAiGenerated && (
+                <Badge
+                  variant="secondary"
+                  className="absolute right-2.5 top-2.5 bg-muted text-[10px] text-muted-foreground"
+                >
+                  AI Generated
+                </Badge>
+              )}
               <CardContent className="flex flex-col gap-1.5 pt-1">
-                <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start justify-between gap-2 pr-20">
                   <span className="text-sm font-medium text-foreground">
                     {temple.name}
                   </span>

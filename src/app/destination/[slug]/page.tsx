@@ -176,7 +176,7 @@ export default function DestinationPage({
             <AttractionsTab destinationId={destination.id} />
           </TabsContent>
           <TabsContent value="temples">
-            <TemplesTab destinationId={destination.id} />
+            <TemplesTab destinationId={destination.id} destinationSlug={destination.slug} />
           </TabsContent>
           <TabsContent value="how-to-reach">
             <HowToReachTab destination={destination} originCity={originCity} />

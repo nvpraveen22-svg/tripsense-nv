@@ -29,6 +29,7 @@ interface BuildResult {
     hotels: number;
     activities: number;
     howToReach: number;
+    temples: number;
   };
 }
 
@@ -223,6 +224,7 @@ export default function AdminPage() {
               <Badge variant="secondary">{result.counts.hotels} hotels</Badge>
               <Badge variant="secondary">{result.counts.activities} activities</Badge>
               <Badge variant="secondary">{result.counts.howToReach} how-to-reach</Badge>
+              <Badge variant="secondary">{result.counts.temples} temples</Badge>
             </div>
             <Link
               href={`/destination/${result.slug}`}
