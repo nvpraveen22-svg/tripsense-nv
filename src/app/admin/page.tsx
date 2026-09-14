@@ -9,6 +9,10 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  DestinationAutocomplete,
+  type DestinationSuggestion,
+} from "@/components/destination-autocomplete";
 import { cn } from "@/lib/utils";
 
 const STEPS = [
@@ -46,6 +50,7 @@ export default function AdminPage() {
 
   const [name, setName] = useState("");
   const [state, setState] = useState("");
+  const [nameExists, setNameExists] = useState(false);
   const [building, setBuilding] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
   const [result, setResult] = useState<BuildResult | null>(null);
@@ -78,8 +83,24 @@ export default function AdminPage() {
     }
   }
 
+  function handleNameChange(value: string) {
+    setName(value);
+    setNameExists(false);
+  }
+
+  function handleSelectExisting(destination: DestinationSuggestion) {
+    setName(destination.name);
+    setState(destination.state);
+    setNameExists(true);
+  }
+
+  function handleSelectNew(value: string) {
+    setName(value);
+    setNameExists(false);
+  }
+
   async function handleBuild() {
-    if (!name.trim() || building) return;
+    if (!name.trim() || building || nameExists) return;
 
     setBuilding(true);
     setBuildError(null);
@@ -186,13 +207,20 @@ export default function AdminPage() {
         <CardContent className="flex flex-col gap-3 pt-1">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="dest-name">Destination name</Label>
-            <Input
+            <DestinationAutocomplete
               id="dest-name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={handleNameChange}
+              onSelectExisting={handleSelectExisting}
+              onSelectNew={handleSelectNew}
               placeholder="e.g. Hampi"
               disabled={building}
             />
+            {nameExists && (
+              <p className="text-xs text-destructive">
+                ⚠️ This destination already exists. Building again will be blocked by the API.
+              </p>
+            )}
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="dest-state">State (optional — AI will infer)</Label>
@@ -206,7 +234,7 @@ export default function AdminPage() {
           </div>
           <Button
             onClick={handleBuild}
-            disabled={!name.trim() || building}
+            disabled={!name.trim() || building || nameExists}
             className="gap-1.5"
           >
             {building ? <Loader2 className="size-4 animate-spin" /> : <Rocket className="size-4" />}
