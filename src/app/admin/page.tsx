@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, Circle, Loader2, Lock, Rocket, ArrowRight } from "lucide-react";
+import { CheckCircle2, Circle, ImageIcon, Loader2, Lock, Rocket, ArrowRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,6 +33,11 @@ interface BuildResult {
   };
 }
 
+interface SyncResult {
+  synced: { photos: number; images: number; videos: number };
+  skipped: number;
+}
+
 export default function AdminPage() {
   const [pin, setPin] = useState("");
   const [verified, setVerified] = useState(false);
@@ -46,6 +51,10 @@ export default function AdminPage() {
   const [result, setResult] = useState<BuildResult | null>(null);
   const [buildError, setBuildError] = useState<string | null>(null);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const [syncing, setSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
+  const [syncError, setSyncError] = useState<string | null>(null);
 
   async function handleVerify() {
     setVerifying(true);
@@ -104,6 +113,30 @@ export default function AdminPage() {
     } finally {
       if (intervalRef.current) clearInterval(intervalRef.current);
       setBuilding(false);
+    }
+  }
+
+  async function handleSyncMedia() {
+    if (syncing) return;
+    setSyncing(true);
+    setSyncError(null);
+    setSyncResult(null);
+    try {
+      const res = await fetch("/api/admin/sync-media", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pin }),
+      });
+      const data = await res.json();
+      if (res.ok && data.synced) {
+        setSyncResult(data);
+      } else {
+        setSyncError(data.error ?? "Something went wrong.");
+      }
+    } catch {
+      setSyncError("Something went wrong. Please try again.");
+    } finally {
+      setSyncing(false);
     }
   }
 
@@ -233,6 +266,52 @@ export default function AdminPage() {
               View {name} live
               <ArrowRight className="size-3.5" />
             </Link>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <div className="flex flex-col gap-1 pt-2">
+        <h2 className="text-base font-semibold text-foreground">Sync Photos & Videos</h2>
+        <p className="text-sm text-muted-foreground">
+          Backfill missing destination photos and media (images/videos) from Unsplash and
+          YouTube for any destination that&apos;s missing them.
+        </p>
+      </div>
+
+      <Card>
+        <CardContent className="flex flex-col gap-3 pt-1">
+          <Button
+            variant="outline"
+            onClick={handleSyncMedia}
+            disabled={syncing}
+            className="gap-1.5"
+          >
+            {syncing ? <Loader2 className="size-4 animate-spin" /> : <ImageIcon className="size-4" />}
+            🖼️ Sync Photos & Videos
+          </Button>
+          {syncing && (
+            <p className="text-xs text-muted-foreground">
+              Syncing destinations with missing media...
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      {syncError && (
+        <Alert variant="destructive">
+          <AlertTitle>Couldn&apos;t sync media</AlertTitle>
+          <AlertDescription>{syncError}</AlertDescription>
+        </Alert>
+      )}
+
+      {syncResult && (
+        <Alert>
+          <CheckCircle2 className="size-4" />
+          <AlertTitle>Synced</AlertTitle>
+          <AlertDescription className="flex flex-wrap gap-1.5">
+            <Badge variant="secondary">{syncResult.synced.photos} destination photos</Badge>
+            <Badge variant="secondary">{syncResult.synced.images} images</Badge>
+            <Badge variant="secondary">{syncResult.synced.videos} videos</Badge>
           </AlertDescription>
         </Alert>
       )}

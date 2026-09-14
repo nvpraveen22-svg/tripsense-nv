@@ -20,6 +20,20 @@ interface GalleryPhoto {
   caption: string;
 }
 
+interface DbVideo {
+  id: string;
+  title: string;
+  desc: string;
+}
+
+function extractYouTubeId(url: string): string | null {
+  try {
+    return new URL(url).searchParams.get("v");
+  } catch {
+    return null;
+  }
+}
+
 function VideoThumbnail({ id, title, desc }: { id: string; title: string; desc: string }) {
   const [src, setSrc] = useState(`https://img.youtube.com/vi/${id}/maxresdefault.jpg`);
 
@@ -53,6 +67,7 @@ function VideoThumbnail({ id, title, desc }: { id: string; title: string; desc: 
 
 export function MediaTab({ destinationId, destinationName, destinationSlug }: MediaTabProps) {
   const [photos, setPhotos] = useState<GalleryPhoto[]>([]);
+  const [dbVideos, setDbVideos] = useState<DbVideo[]>([]);
   const [loadingPhotos, setLoadingPhotos] = useState(true);
   const [photoError, setPhotoError] = useState(false);
   const [lightbox, setLightbox] = useState<GalleryPhoto | null>(null);
@@ -64,7 +79,7 @@ export function MediaTab({ destinationId, destinationName, destinationSlug }: Me
       setLoadingPhotos(true);
       setPhotoError(false);
       try {
-        const [attractions, hotels, activities] = await Promise.all([
+        const [attractions, hotels, activities, media] = await Promise.all([
           supabase
             .from("attractions")
             .select("name, photo_url")
@@ -74,11 +89,12 @@ export function MediaTab({ destinationId, destinationName, destinationSlug }: Me
             .from("activities")
             .select("name, photo_url")
             .eq("destination_id", destinationId),
+          supabase.from("media").select("*").eq("destination_id", destinationId),
         ]);
 
         if (cancelled) return;
 
-        if (attractions.error || hotels.error || activities.error) {
+        if (attractions.error || hotels.error || activities.error || media.error) {
           setPhotoError(true);
           return;
         }
@@ -90,11 +106,36 @@ export function MediaTab({ destinationId, destinationName, destinationSlug }: Me
             .filter((r) => Boolean(r.photo_url))
             .map((r) => ({ url: r.photo_url as string, caption: r.name }));
 
+        // Promise.all across differently-typed queries defeats this file's
+        // typed client inference for the last element (see the untyped-
+        // client workaround in use-destination-table.ts for the same class
+        // of issue) — the shape is validated by construction here instead.
+        const mediaRows = (media.data ?? []) as {
+          media_type: string;
+          url: string;
+          title: string | null;
+          author: string | null;
+        }[];
+        const mediaImages: GalleryPhoto[] = mediaRows
+          .filter((r) => r.media_type === "image")
+          .map((r) => ({ url: r.url, caption: r.title ?? "Photo" }));
+
         setPhotos([
           ...toPhotos(attractions.data),
           ...toPhotos(hotels.data),
           ...toPhotos(activities.data),
+          ...mediaImages,
         ]);
+
+        setDbVideos(
+          mediaRows
+            .filter((r) => r.media_type === "video")
+            .map((r) => {
+              const id = extractYouTubeId(r.url);
+              return id ? { id, title: r.title ?? "Video", desc: r.author ?? "" } : null;
+            })
+            .filter((v): v is DbVideo => v !== null)
+        );
       } catch {
         if (!cancelled) setPhotoError(true);
       } finally {
@@ -108,7 +149,9 @@ export function MediaTab({ destinationId, destinationName, destinationSlug }: Me
     };
   }, [destinationId]);
 
-  const videos = DESTINATION_VIDEOS[destinationSlug] ?? [];
+  // DB-synced videos (from the media sync route) take priority over the
+  // static, hand-curated fallback list once any exist for this destination.
+  const videos = dbVideos.length > 0 ? dbVideos : DESTINATION_VIDEOS[destinationSlug] ?? [];
   const photoSpots = DESTINATION_HIGHLIGHTS[destinationSlug]?.photoSpots ?? [];
 
   return (
