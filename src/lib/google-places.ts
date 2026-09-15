@@ -22,6 +22,48 @@ export interface PlaceDetails {
   photoReference: string | null;
 }
 
+// Words too generic to prove two names refer to the same place (hospitality/
+// tourism boilerplate) - excluded from the relevance check below alongside
+// the destination city name itself, which appears in nearly every result in
+// the area and would otherwise make almost any pair "match".
+const GENERIC_NAME_WORDS = new Set([
+  "the", "and", "near", "beach", "resort", "hotel", "stay", "inn", "lodge",
+  "guest", "house", "eco", "camp", "park", "village", "market", "temple",
+  "museum", "complex", "spa", "restaurant", "cafe", "view", "garden",
+  "point", "india", "road", "street", "grand", "palace",
+]);
+
+function significantTokens(text: string, exclude: Set<string>): Set<string> {
+  return new Set(
+    text
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, " ")
+      .split(/\s+/)
+      .filter((t) => t.length >= 4 && !GENERIC_NAME_WORDS.has(t) && !exclude.has(t))
+  );
+}
+
+// Text Search always returns *something* if any place is even loosely
+// related to the query - for a name with no real Google listing (common for
+// AI-generated hotel/attraction names) it silently falls back to the
+// closest nearby result instead of "no match". Require at least one
+// distinctive word in common before trusting a result; with nothing
+// distinctive to check (e.g. the name is just generic words + city), fall
+// back to trusting the API since there's no way to verify either way.
+function isPlausibleMatch(sourceName: string, resultName: string, city: string): boolean {
+  const cityTokens = new Set(
+    city
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, " ")
+      .split(/\s+/)
+      .filter(Boolean)
+  );
+  const sourceTokens = significantTokens(sourceName, cityTokens);
+  if (sourceTokens.size === 0) return true;
+  const resultTokens = significantTokens(resultName, cityTokens);
+  return Array.from(sourceTokens).some((token) => resultTokens.has(token));
+}
+
 export async function searchPlace(
   name: string,
   city: string
@@ -47,6 +89,13 @@ export async function searchPlace(
 
     const first = data.results?.[0];
     if (!first?.place_id) return null;
+
+    if (!isPlausibleMatch(name, first.name ?? "", city)) {
+      console.warn(
+        `[google-places] rejecting low-confidence match: "${name}" -> "${first.name}"`
+      );
+      return null;
+    }
 
     return {
       placeId: first.place_id,
