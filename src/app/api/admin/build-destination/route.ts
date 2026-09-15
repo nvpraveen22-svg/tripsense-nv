@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI, SchemaType, type Schema } from "@google/generative-ai";
 import { createAdminClient } from "@/lib/supabase-admin";
+import { searchPlace, getPlaceDetails } from "@/lib/google-places";
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -390,20 +395,66 @@ All costs must be in Indian Rupees (numbers only, no currency symbols). Month na
     counts.attractions = parsed.attractions.length;
   }
 
-  const { error: hotelsError } = await supabase.from("hotels").insert(
-    parsed.hotels.map((h) => ({
-      ...h,
-      // hotels_stars_check requires stars >= 3; Gemini has no visibility
-      // into that DB constraint, so clamp rather than let one budget
-      // property fail the whole batch insert.
-      stars: Math.max(3, h.stars),
-      destination_id: destinationId,
-    }))
-  );
+  const { data: insertedHotels, error: hotelsError } = await supabase
+    .from("hotels")
+    .insert(
+      parsed.hotels.map((h) => ({
+        ...h,
+        // hotels_stars_check requires stars >= 3; Gemini has no visibility
+        // into that DB constraint, so clamp rather than let one budget
+        // property fail the whole batch insert.
+        stars: Math.max(3, h.stars),
+        destination_id: destinationId,
+      }))
+    )
+    .select("id, name");
   if (hotelsError) {
     console.error("[build-destination] hotels insert failed:", hotelsError.message);
   } else {
     counts.hotels = parsed.hotels.length;
+  }
+
+  // Best-effort: enrich the newly-inserted hotels with real Google ratings/
+  // contact info. Capped at 5 (== the hotel count Gemini always generates)
+  // to bound Places API quota per destination build; skipped entirely if no
+  // key is configured, same "log and continue" pattern as the Unsplash/
+  // YouTube keys in sync-media.
+  let placesEnriched = 0;
+  if (!process.env.GOOGLE_PLACES_API_KEY) {
+    console.warn(
+      "[build-destination] GOOGLE_PLACES_API_KEY is not set — skipping hotel enrichment."
+    );
+  } else if (insertedHotels) {
+    const cityName = `${name} ${stateHint ?? ""}`.trim();
+    for (const hotel of insertedHotels.slice(0, 5) as { id: string; name: string }[]) {
+      const found = await searchPlace(hotel.name, cityName);
+      await sleep(200);
+      if (!found) continue;
+
+      const details = await getPlaceDetails(found.placeId);
+      await sleep(200);
+
+      const { error: enrichError } = await supabase
+        .from("hotels")
+        .update({
+          google_rating: details?.rating ?? found.rating,
+          google_reviews_count: details?.userRatingsTotal ?? found.userRatingsTotal,
+          phone: details?.phone ?? null,
+          website: details?.website ?? null,
+          google_place_id: found.placeId,
+          places_enriched_at: new Date().toISOString(),
+        })
+        .eq("id", hotel.id);
+
+      if (enrichError) {
+        console.error(
+          `[build-destination] hotel enrichment failed for "${hotel.name}":`,
+          enrichError.message
+        );
+      } else {
+        placesEnriched++;
+      }
+    }
   }
 
   const { error: activitiesError } = await supabase.from("activities").insert(
@@ -440,5 +491,6 @@ All costs must be in Indian Rupees (numbers only, no currency symbols). Month na
     slug,
     destinationId,
     counts,
+    places_enriched: placesEnriched,
   });
 }

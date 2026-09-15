@@ -2,7 +2,16 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, Circle, ImageIcon, Loader2, Lock, Rocket, ArrowRight } from "lucide-react";
+import {
+  CheckCircle2,
+  Circle,
+  ImageIcon,
+  Loader2,
+  Lock,
+  Rocket,
+  ArrowRight,
+  MapPin,
+} from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,6 +51,12 @@ interface SyncResult {
   skipped: number;
 }
 
+interface EnrichResult {
+  enriched: { hotels: number; attractions: number };
+  skipped: number;
+  errors: number;
+}
+
 export default function AdminPage() {
   const [pin, setPin] = useState("");
   const [verified, setVerified] = useState(false);
@@ -60,6 +75,12 @@ export default function AdminPage() {
   const [syncing, setSyncing] = useState(false);
   const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
+
+  const [enrichDestName, setEnrichDestName] = useState("");
+  const [enrichDestSlug, setEnrichDestSlug] = useState<string | null>(null);
+  const [enriching, setEnriching] = useState(false);
+  const [enrichResult, setEnrichResult] = useState<EnrichResult | null>(null);
+  const [enrichError, setEnrichError] = useState<string | null>(null);
 
   async function handleVerify() {
     setVerifying(true);
@@ -158,6 +179,39 @@ export default function AdminPage() {
       setSyncError("Something went wrong. Please try again.");
     } finally {
       setSyncing(false);
+    }
+  }
+
+  function handleEnrichDestNameChange(value: string) {
+    setEnrichDestName(value);
+    setEnrichDestSlug(null);
+  }
+
+  async function handleEnrichPlaces() {
+    if (enriching) return;
+    setEnriching(true);
+    setEnrichError(null);
+    setEnrichResult(null);
+    try {
+      const res = await fetch("/api/admin/enrich-places", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pin,
+          type: "all",
+          destinationSlug: enrichDestSlug ?? undefined,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.enriched) {
+        setEnrichResult(data);
+      } else {
+        setEnrichError(data.error ?? "Something went wrong.");
+      }
+    } catch {
+      setEnrichError("Something went wrong. Please try again.");
+    } finally {
+      setEnriching(false);
     }
   }
 
@@ -340,6 +394,77 @@ export default function AdminPage() {
             <Badge variant="secondary">{syncResult.synced.photos} destination photos</Badge>
             <Badge variant="secondary">{syncResult.synced.images} images</Badge>
             <Badge variant="secondary">{syncResult.synced.videos} videos</Badge>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <div className="flex flex-col gap-1 pt-2">
+        <h2 className="text-base font-semibold text-foreground">
+          📍 Google Places Enrichment
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Updates hotel ratings, phone numbers, and websites from Google.
+        </p>
+      </div>
+
+      <Card>
+        <CardContent className="flex flex-col gap-3 pt-1">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="enrich-dest-name">
+              Destination filter (optional — leave blank for all)
+            </Label>
+            <DestinationAutocomplete
+              id="enrich-dest-name"
+              value={enrichDestName}
+              onChange={handleEnrichDestNameChange}
+              onSelectExisting={(destination) => {
+                setEnrichDestName(destination.name);
+                setEnrichDestSlug(destination.slug);
+              }}
+              onSelectNew={(value) => {
+                setEnrichDestName(value);
+                setEnrichDestSlug(null);
+              }}
+              placeholder="e.g. Chirala"
+              disabled={enriching}
+            />
+          </div>
+          <Button
+            variant="outline"
+            onClick={handleEnrichPlaces}
+            disabled={enriching}
+            className="gap-1.5"
+          >
+            {enriching ? <Loader2 className="size-4 animate-spin" /> : <MapPin className="size-4" />}
+            {enrichDestSlug ? `Enrich ${enrichDestName}` : "Enrich All Destinations"}
+          </Button>
+          {enriching && (
+            <p className="text-xs text-muted-foreground">
+              Looking up Google Places data — this can take a minute...
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
+      {enrichError && (
+        <Alert variant="destructive">
+          <AlertTitle>Couldn&apos;t enrich places</AlertTitle>
+          <AlertDescription>{enrichError}</AlertDescription>
+        </Alert>
+      )}
+
+      {enrichResult && (
+        <Alert>
+          <CheckCircle2 className="size-4" />
+          <AlertTitle>
+            Enriched {enrichResult.enriched.hotels} hotels, {enrichResult.enriched.attractions}{" "}
+            attractions
+          </AlertTitle>
+          <AlertDescription className="flex flex-wrap gap-1.5">
+            <Badge variant="secondary">{enrichResult.skipped} skipped (recently enriched)</Badge>
+            {enrichResult.errors > 0 && (
+              <Badge variant="destructive">{enrichResult.errors} errors</Badge>
+            )}
           </AlertDescription>
         </Alert>
       )}
