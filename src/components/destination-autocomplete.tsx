@@ -109,8 +109,8 @@ export function DestinationAutocomplete({
               <span className="truncate text-foreground">
                 {dest.name} — {dest.state}
               </span>
-              <Badge variant="destructive" className="shrink-0 text-[10px]">
-                Already exists
+              <Badge className="shrink-0 border-transparent bg-amber-100 text-[10px] text-amber-800 dark:bg-amber-500/20 dark:text-amber-400">
+                Already exists ✓
               </Badge>
             </li>
           ))}

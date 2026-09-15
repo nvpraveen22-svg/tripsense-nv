@@ -258,7 +258,7 @@ export default function AdminPage() {
         </p>
       </div>
 
-      <Card>
+      <Card className="overflow-visible">
         <CardContent className="flex flex-col gap-3 pt-1">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="dest-name">Destination name</Label>
@@ -272,9 +272,9 @@ export default function AdminPage() {
               disabled={building}
             />
             {nameExists && (
-              <p className="text-xs text-destructive">
-                ⚠️ This destination already exists. Building again will be blocked by the API.
-              </p>
+              <Badge className="w-fit gap-1 border-transparent bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-400">
+                Already exists ✓
+              </Badge>
             )}
           </div>
           <div className="flex flex-col gap-1.5">
@@ -409,7 +409,7 @@ export default function AdminPage() {
         </p>
       </div>
 
-      <Card>
+      <Card className="overflow-visible">
         <CardContent className="flex flex-col gap-3 pt-1">
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="enrich-dest-name">
