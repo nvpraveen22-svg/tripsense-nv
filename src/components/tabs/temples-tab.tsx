@@ -120,111 +120,113 @@ export function TemplesTab({ destinationId, destinationSlug }: TemplesTabProps) 
           </Alert>
         )}
 
-        {displayList.map((temple) => {
-          const { value: specialPuja, rest: r1 } = extractLabeled(
-            temple.description,
-            "Special puja"
-          );
-          const { value: bestTime, rest: r2 } = extractLabeled(r1, "Best time to visit");
-          const { value: ratingText, rest: r3 } = extractLabeled(r2, "Rating");
-          const { value: tip, rest: significance } = extractLabeled(r3, "Tip");
-          const rating = ratingText ? Number(ratingText.split("/")[0]) : null;
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {displayList.map((temple) => {
+            const { value: specialPuja, rest: r1 } = extractLabeled(
+              temple.description,
+              "Special puja"
+            );
+            const { value: bestTime, rest: r2 } = extractLabeled(r1, "Best time to visit");
+            const { value: ratingText, rest: r3 } = extractLabeled(r2, "Rating");
+            const { value: tip, rest: significance } = extractLabeled(r3, "Tip");
+            const rating = ratingText ? Number(ratingText.split("/")[0]) : null;
 
-          return (
-            <Card key={temple.id} className="relative">
-              {temple.isAiGenerated && (
-                <Badge
-                  variant="secondary"
-                  className="absolute right-2.5 top-2.5 bg-muted text-[10px] text-muted-foreground"
-                >
-                  AI Generated
-                </Badge>
-              )}
-              {(temple.photo_url || temple.google_rating != null) && (
-                <div className="relative h-[160px] w-full bg-gradient-to-br from-primary/40 to-secondary/40">
-                  {temple.photo_url && (
-                    <Image
-                      src={temple.photo_url}
-                      alt={temple.name}
-                      fill
-                      sizes="(max-width: 640px) 100vw, 50vw"
-                      className="object-cover"
-                    />
-                  )}
-                  {temple.google_rating != null && (
-                    <span className="absolute right-2 top-2 flex items-center gap-0.5 rounded-full bg-black/50 px-1.5 py-0.5 text-xs font-medium text-white backdrop-blur-sm">
-                      <Star className="size-3 fill-current" />
-                      {temple.google_rating.toFixed(1)}
-                    </span>
-                  )}
-                </div>
-              )}
-              <CardContent className="flex flex-col gap-1.5 pt-1">
-                <div className="flex items-start justify-between gap-2 pr-20">
-                  <span className="text-sm font-medium text-foreground">
-                    {temple.name}
-                  </span>
-                  {rating != null && !Number.isNaN(rating) && (
-                    <StarRating value={rating} showValue={false} />
-                  )}
-                </div>
-
-                {temple.deity && (
-                  <Badge variant="secondary" className="w-fit">
-                    {temple.deity}
+            return (
+              <Card key={temple.id} className="relative">
+                {temple.isAiGenerated && (
+                  <Badge
+                    variant="secondary"
+                    className="absolute right-2.5 top-2.5 bg-muted text-[10px] text-muted-foreground"
+                  >
+                    AI Generated
                   </Badge>
                 )}
-
-                {significance && (
-                  <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
-                    {significance}
-                  </p>
+                {(temple.photo_url || temple.google_rating != null) && (
+                  <div className="relative h-40 w-full bg-gradient-to-br from-primary/40 to-secondary/40">
+                    {temple.photo_url && (
+                      <Image
+                        src={temple.photo_url}
+                        alt={temple.name}
+                        fill
+                        sizes="(max-width: 640px) 100vw, 33vw"
+                        className="object-cover"
+                      />
+                    )}
+                    {temple.google_rating != null && (
+                      <span className="absolute right-2 top-2 flex items-center gap-0.5 rounded-full bg-black/50 px-1.5 py-0.5 text-xs font-medium text-white backdrop-blur-sm">
+                        <Star className="size-3 fill-current" />
+                        {temple.google_rating.toFixed(1)}
+                      </span>
+                    )}
+                  </div>
                 )}
+                <CardContent className="flex flex-col gap-1.5 pt-3">
+                  <div className="flex items-start justify-between gap-2 pr-20">
+                    <span className="text-sm font-medium text-foreground">
+                      {temple.name}
+                    </span>
+                    {rating != null && !Number.isNaN(rating) && (
+                      <StarRating value={rating} showValue={false} />
+                    )}
+                  </div>
 
-                <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                  {temple.distance_from_center_km != null && (
-                    <span className="flex items-center gap-1">
-                      <MapPin className="size-3" />
-                      {temple.distance_from_center_km} km
-                    </span>
-                  )}
-                  {temple.timings && (
-                    <span className="flex items-center gap-1">
-                      <Clock className="size-3" />
-                      {temple.timings}
-                    </span>
-                  )}
-                  {temple.dress_code && (
-                    <span className="flex items-center gap-1">
-                      <Shirt className="size-3" />
-                      {temple.dress_code}
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  {specialPuja && (
-                    <Badge variant="outline" className="w-fit gap-1">
-                      <Sparkles className="size-3" />
-                      {specialPuja}
+                  {temple.deity && (
+                    <Badge variant="secondary" className="w-fit">
+                      {temple.deity}
                     </Badge>
                   )}
-                  {bestTime && (
-                    <Badge variant="outline" className="w-fit">
-                      Best visited: {bestTime}
-                    </Badge>
-                  )}
-                </div>
 
-                {tip && (
-                  <p className="rounded-lg bg-accent px-2 py-1.5 text-xs text-accent-foreground">
-                    💡 {tip}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
+                  {significance && (
+                    <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                      {significance}
+                    </p>
+                  )}
+
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                    {temple.distance_from_center_km != null && (
+                      <span className="flex items-center gap-1">
+                        <MapPin className="size-3" />
+                        {temple.distance_from_center_km} km
+                      </span>
+                    )}
+                    {temple.timings && (
+                      <span className="flex items-center gap-1">
+                        <Clock className="size-3" />
+                        {temple.timings}
+                      </span>
+                    )}
+                    {temple.dress_code && (
+                      <span className="flex items-center gap-1">
+                        <Shirt className="size-3" />
+                        {temple.dress_code}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {specialPuja && (
+                      <Badge variant="outline" className="w-fit gap-1">
+                        <Sparkles className="size-3" />
+                        {specialPuja}
+                      </Badge>
+                    )}
+                    {bestTime && (
+                      <Badge variant="outline" className="w-fit">
+                        Best visited: {bestTime}
+                      </Badge>
+                    )}
+                  </div>
+
+                  {tip && (
+                    <p className="rounded-lg bg-accent px-2 py-1.5 text-xs text-accent-foreground">
+                      💡 {tip}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
       </div>
     </TabState>
   );
