@@ -17,8 +17,23 @@ interface YouTubeSearchItem {
   snippet: {
     title: string;
     channelTitle: string;
+    publishedAt: string;
     thumbnails?: { medium?: { url: string } };
   };
+}
+
+// YouTube publicly removed like/dislike ratios in 2021 - viewCount is the
+// only "popularity" signal the public API still exposes, so it stands in
+// for "rating" here. Thresholds are deliberately asymmetric: a video under
+// a year old only needs a modest view count to qualify, but an older video
+// must clear a much higher bar to be included alongside it.
+const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
+const RECENT_MIN_VIEWS = 3_000;
+const OLD_MIN_VIEWS = 25_000;
+
+function qualifies(publishedAt: string, viewCount: number): boolean {
+  const isRecent = Date.now() - new Date(publishedAt).getTime() <= ONE_YEAR_MS;
+  return isRecent ? viewCount >= RECENT_MIN_VIEWS : viewCount >= OLD_MIN_VIEWS;
 }
 
 function sleep(ms: number) {
@@ -79,6 +94,33 @@ async function searchYouTube(
   } catch (err) {
     console.error(`[sync-media] YouTube request error for "${query}":`, err);
     return [];
+  }
+}
+
+async function fetchViewCounts(
+  videoIds: string[],
+  apiKey: string
+): Promise<Record<string, number>> {
+  if (videoIds.length === 0) return {};
+  const url = `https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${videoIds.join(
+    ","
+  )}&key=${apiKey}`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      console.error(`[sync-media] YouTube stats request failed (${res.status})`);
+      return {};
+    }
+    const data = await res.json();
+    return Object.fromEntries(
+      (data.items ?? []).map((v: { id: string; statistics: { viewCount?: string } }) => [
+        v.id,
+        Number(v.statistics.viewCount ?? 0),
+      ])
+    );
+  } catch (err) {
+    console.error("[sync-media] YouTube stats request error:", err);
+    return {};
   }
 }
 
@@ -222,12 +264,30 @@ export async function POST(request: NextRequest) {
         .eq("media_type", "video");
 
       if ((videoCount ?? 0) < 2) {
+        // Search quota cost is fixed per call regardless of maxResults, so
+        // pull a wider candidate pool (25) to filter/rank down from rather
+        // than taking the top-3 raw search results.
         const items = await searchYouTube(
           `${dest.name} ${dest.state} India travel vlog`,
-          3,
+          25,
           youtubeKey
         );
-        for (const item of items) {
+        const viewCounts = await fetchViewCounts(
+          items.map((item) => item.id.videoId),
+          youtubeKey
+        );
+        // Filter to videos that clear the recency/view-count bar, but keep
+        // YouTube's own relevance ordering rather than re-sorting by raw
+        // view count - a tangential mega-viral video (e.g. about a nearby
+        // city that just happens to mention this destination) would
+        // otherwise leapfrog genuinely on-topic results.
+        const qualifying = items.filter((item) =>
+          qualifies(item.snippet.publishedAt, viewCounts[item.id.videoId] ?? 0)
+        );
+
+        let insertedForDest = 0;
+        for (const item of qualifying) {
+          if (insertedForDest >= 3) break;
           const videoUrl = `https://www.youtube.com/watch?v=${item.id.videoId}`;
           if (await mediaRowExists(supabase, dest.id, videoUrl)) continue;
           const { error: insertError } = await supabase.from("media").insert({
@@ -242,6 +302,7 @@ export async function POST(request: NextRequest) {
             console.error(`[sync-media] video insert failed for ${dest.slug}:`, insertError.message);
           } else {
             videosSynced++;
+            insertedForDest++;
           }
         }
         await sleep(200);
