@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { Clock, MapPin, Shirt, Sparkles } from "lucide-react";
+import { Clock, MapPin, Shirt, Sparkles, Star } from "lucide-react";
 import { useDestinationTable } from "@/hooks/use-destination-table";
 import { extractLabeled } from "@/lib/parse-notes";
 import { Card, CardContent } from "@/components/ui/card";
@@ -60,6 +60,9 @@ export function TemplesTab({ destinationId, destinationSlug }: TemplesTabProps) 
         stay_price_max: null,
         booking_contact: null,
         photo_url: a.photo_url,
+        google_place_id: a.google_place_id,
+        google_rating: a.google_rating,
+        places_enriched_at: a.places_enriched_at,
         sort_order: a.sort_order,
         created_at: a.created_at,
       }));
@@ -137,15 +140,23 @@ export function TemplesTab({ destinationId, destinationSlug }: TemplesTabProps) 
                   AI Generated
                 </Badge>
               )}
-              {temple.photo_url && (
+              {(temple.photo_url || temple.google_rating != null) && (
                 <div className="relative h-[160px] w-full bg-gradient-to-br from-primary/40 to-secondary/40">
-                  <Image
-                    src={temple.photo_url}
-                    alt={temple.name}
-                    fill
-                    sizes="(max-width: 640px) 100vw, 50vw"
-                    className="object-cover"
-                  />
+                  {temple.photo_url && (
+                    <Image
+                      src={temple.photo_url}
+                      alt={temple.name}
+                      fill
+                      sizes="(max-width: 640px) 100vw, 50vw"
+                      className="object-cover"
+                    />
+                  )}
+                  {temple.google_rating != null && (
+                    <span className="absolute right-2 top-2 flex items-center gap-0.5 rounded-full bg-black/50 px-1.5 py-0.5 text-xs font-medium text-white backdrop-blur-sm">
+                      <Star className="size-3 fill-current" />
+                      {temple.google_rating.toFixed(1)}
+                    </span>
+                  )}
                 </div>
               )}
               <CardContent className="flex flex-col gap-1.5 pt-1">

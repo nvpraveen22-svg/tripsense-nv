@@ -52,7 +52,7 @@ interface SyncResult {
 }
 
 interface EnrichResult {
-  enriched: { hotels: number; attractions: number };
+  enriched: { hotels: number; attractions: number; temples: number };
   skipped: number;
   noMatch: number;
   errors: number;
@@ -404,7 +404,8 @@ export default function AdminPage() {
           📍 Google Places Enrichment
         </h2>
         <p className="text-sm text-muted-foreground">
-          Updates hotel ratings, phone numbers, and websites from Google.
+          Updates hotel ratings, phone numbers, and websites, plus real ratings for
+          attractions and temples, from Google.
         </p>
       </div>
 
@@ -459,7 +460,7 @@ export default function AdminPage() {
           <CheckCircle2 className="size-4" />
           <AlertTitle>
             Enriched {enrichResult.enriched.hotels} hotels, {enrichResult.enriched.attractions}{" "}
-            attractions
+            attractions, {enrichResult.enriched.temples} temples
           </AlertTitle>
           <AlertDescription className="flex flex-wrap gap-1.5">
             <Badge variant="secondary">{enrichResult.skipped} skipped (recently enriched)</Badge>

@@ -69,10 +69,10 @@ export function AttractionsTab({ destinationId }: AttractionsTabProps) {
                       className="object-cover"
                     />
                   )}
-                  {attraction.rating != null && (
+                  {(attraction.google_rating ?? attraction.rating) != null && (
                     <span className="absolute right-2 top-2 flex items-center gap-0.5 rounded-full bg-black/50 px-1.5 py-0.5 text-xs font-medium text-white backdrop-blur-sm">
                       <Star className="size-3 fill-current" />
-                      {attraction.rating.toFixed(1)}
+                      {(attraction.google_rating ?? attraction.rating)!.toFixed(1)}
                     </span>
                   )}
                   {attraction.category && (

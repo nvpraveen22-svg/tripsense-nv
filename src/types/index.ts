@@ -38,6 +38,8 @@ export interface Attraction {
   family_friendly: boolean | null;
   photo_url: string | null;
   google_place_id: string | null;
+  google_rating: number | null;
+  places_enriched_at: string | null;
   rating: number | null;
   sort_order: number | null;
   created_at: string;
@@ -59,6 +61,9 @@ export interface Temple {
   stay_price_max: number | null;
   booking_contact: string | null;
   photo_url: string | null;
+  google_place_id: string | null;
+  google_rating: number | null;
+  places_enriched_at: string | null;
   sort_order: number | null;
   created_at: string;
 }
@@ -94,6 +99,11 @@ export interface Hotel {
   warning_flag: boolean | null;
   warning_reason: string | null;
   google_place_id: string | null;
+  google_rating: number | null;
+  google_reviews_count: number | null;
+  phone: string | null;
+  website: string | null;
+  places_enriched_at: string | null;
   booking_url: string | null;
   photo_url: string | null;
   created_at: string;

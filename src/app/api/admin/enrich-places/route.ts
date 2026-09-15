@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase-admin";
 import { searchPlace, getPlaceDetails } from "@/lib/google-places";
 
@@ -23,16 +24,77 @@ interface DestinationRow {
   slug: string;
 }
 
-interface HotelRow {
+interface NamedRow {
   id: string;
   name: string;
   places_enriched_at: string | null;
 }
 
-interface AttractionRow {
-  id: string;
-  name: string;
-  places_enriched_at: string | null;
+interface EnrichCounts {
+  enriched: number;
+  noMatch: number;
+  errors: number;
+  skipped: number;
+}
+
+// Shared by attractions and temples - both only get google_rating,
+// google_place_id, and places_enriched_at (no phone/website/reviews count,
+// unlike hotels, which also fetches Place Details for those).
+async function enrichRatingOnlyTable(
+  supabase: SupabaseClient,
+  table: "attractions" | "temples",
+  destinationId: string,
+  destinationSlug: string,
+  cityName: string
+): Promise<EnrichCounts> {
+  const counts: EnrichCounts = { enriched: 0, noMatch: 0, errors: 0, skipped: 0 };
+
+  const { data: rows, error: lookupError } = await supabase
+    .from(table)
+    .select("id, name, places_enriched_at")
+    .eq("destination_id", destinationId);
+
+  if (lookupError) {
+    console.error(`[enrich-places] ${table} lookup failed for ${destinationSlug}:`, lookupError.message);
+    counts.errors++;
+    return counts;
+  }
+
+  for (const row of (rows ?? []) as NamedRow[]) {
+    if (!needsEnrichment(row.places_enriched_at)) {
+      counts.skipped++;
+      continue;
+    }
+
+    const found = await searchPlace(row.name, cityName);
+    await sleep(200);
+    if (found === undefined) {
+      counts.errors++;
+      continue;
+    }
+    if (found === null) {
+      counts.noMatch++;
+      continue;
+    }
+
+    const { error: updateError } = await supabase
+      .from(table)
+      .update({
+        google_rating: found.rating,
+        google_place_id: found.placeId,
+        places_enriched_at: new Date().toISOString(),
+      })
+      .eq("id", row.id);
+
+    if (updateError) {
+      console.error(`[enrich-places] ${table} update failed for "${row.name}":`, updateError.message);
+      counts.errors++;
+    } else {
+      counts.enriched++;
+    }
+  }
+
+  return counts;
 }
 
 export async function POST(request: NextRequest) {
@@ -50,7 +112,11 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  let body: { pin?: string; destinationSlug?: string; type?: "hotels" | "attractions" | "all" };
+  let body: {
+    pin?: string;
+    destinationSlug?: string;
+    type?: "hotels" | "attractions" | "temples" | "all";
+  };
   try {
     body = await request.json();
   } catch {
@@ -82,6 +148,7 @@ export async function POST(request: NextRequest) {
 
   let hotelsEnriched = 0;
   let attractionsEnriched = 0;
+  let templesEnriched = 0;
   let skipped = 0;
   let noMatch = 0;
   let errors = 0;
@@ -99,7 +166,7 @@ export async function POST(request: NextRequest) {
         console.error(`[enrich-places] hotels lookup failed for ${dest.slug}:`, hotelsError.message);
         errors++;
       } else {
-        for (const hotel of (hotels ?? []) as HotelRow[]) {
+        for (const hotel of (hotels ?? []) as NamedRow[]) {
           if (!needsEnrichment(hotel.places_enriched_at)) {
             skipped++;
             continue;
@@ -145,60 +212,24 @@ export async function POST(request: NextRequest) {
     }
 
     if (type === "attractions" || type === "all") {
-      const { data: attractions, error: attractionsError } = await supabase
-        .from("attractions")
-        .select("id, name, places_enriched_at")
-        .eq("destination_id", dest.id);
+      const c = await enrichRatingOnlyTable(supabase, "attractions", dest.id, dest.slug, cityName);
+      attractionsEnriched += c.enriched;
+      noMatch += c.noMatch;
+      errors += c.errors;
+      skipped += c.skipped;
+    }
 
-      if (attractionsError) {
-        console.error(
-          `[enrich-places] attractions lookup failed for ${dest.slug}:`,
-          attractionsError.message
-        );
-        errors++;
-      } else {
-        for (const attraction of (attractions ?? []) as AttractionRow[]) {
-          if (!needsEnrichment(attraction.places_enriched_at)) {
-            skipped++;
-            continue;
-          }
-
-          const found = await searchPlace(attraction.name, cityName);
-          await sleep(200);
-          if (found === undefined) {
-            errors++;
-            continue;
-          }
-          if (found === null) {
-            noMatch++;
-            continue;
-          }
-
-          const { error: updateError } = await supabase
-            .from("attractions")
-            .update({
-              google_rating: found.rating,
-              google_place_id: found.placeId,
-              places_enriched_at: new Date().toISOString(),
-            })
-            .eq("id", attraction.id);
-
-          if (updateError) {
-            console.error(
-              `[enrich-places] attraction update failed for "${attraction.name}":`,
-              updateError.message
-            );
-            errors++;
-          } else {
-            attractionsEnriched++;
-          }
-        }
-      }
+    if (type === "temples" || type === "all") {
+      const c = await enrichRatingOnlyTable(supabase, "temples", dest.id, dest.slug, cityName);
+      templesEnriched += c.enriched;
+      noMatch += c.noMatch;
+      errors += c.errors;
+      skipped += c.skipped;
     }
   }
 
   return NextResponse.json({
-    enriched: { hotels: hotelsEnriched, attractions: attractionsEnriched },
+    enriched: { hotels: hotelsEnriched, attractions: attractionsEnriched, temples: templesEnriched },
     skipped,
     noMatch,
     errors,
