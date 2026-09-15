@@ -17,6 +17,7 @@ interface YouTubeSearchItem {
   snippet: {
     title: string;
     channelTitle: string;
+    channelId: string;
     publishedAt: string;
     thumbnails?: { medium?: { url: string } };
   };
@@ -30,11 +31,23 @@ interface YouTubeSearchItem {
 const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 const RECENT_MIN_VIEWS = 3_000;
 const OLD_MIN_VIEWS = 25_000;
+// Excludes Shorts and other cut-down clips.
+const MIN_DURATION_SECONDS = 2 * 60;
 
-function qualifies(publishedAt: string, viewCount: number): boolean {
+function qualifies(publishedAt: string, viewCount: number, durationSeconds: number): boolean {
+  if (durationSeconds < MIN_DURATION_SECONDS) return false;
   const isRecent = Date.now() - new Date(publishedAt).getTime() <= ONE_YEAR_MS;
   return isRecent ? viewCount >= RECENT_MIN_VIEWS : viewCount >= OLD_MIN_VIEWS;
 }
+
+// Channels known to publish auto-dubbed/AI-narrated travel content (verified
+// by ear, not detectable via YouTube API metadata - defaultAudioLanguage
+// does not reliably distinguish these from normal uploads). Add a channel's
+// ID here whenever one is spotted so future syncs skip it automatically.
+const BLOCKED_CHANNEL_IDS = new Set<string>([
+  "UCdzwqxFKeQBJlwLWhtFwJBg", // Abhishek Jha - auto-dubbed narration (flagged on Chirala videos)
+  "UCZGTn3zYfHkDW_CreIm_qFg", // Sai Suhas Guttula - auto-dubbed narration (flagged on Chirala videos)
+]);
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -97,12 +110,26 @@ async function searchYouTube(
   }
 }
 
-async function fetchViewCounts(
+interface YouTubeVideoDetails {
+  viewCount: number;
+  durationSeconds: number;
+}
+
+// Parses ISO 8601 durations as returned by contentDetails.duration (e.g.
+// "PT4M13S", "PT1H2M", "PT45S").
+function parseIsoDurationSeconds(iso: string): number {
+  const match = /^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/.exec(iso);
+  if (!match) return 0;
+  const [, hours, minutes, seconds] = match;
+  return (Number(hours ?? 0) * 3600) + (Number(minutes ?? 0) * 60) + Number(seconds ?? 0);
+}
+
+async function fetchVideoDetails(
   videoIds: string[],
   apiKey: string
-): Promise<Record<string, number>> {
+): Promise<Record<string, YouTubeVideoDetails>> {
   if (videoIds.length === 0) return {};
-  const url = `https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${videoIds.join(
+  const url = `https://www.googleapis.com/youtube/v3/videos?part=statistics,contentDetails&id=${videoIds.join(
     ","
   )}&key=${apiKey}`;
   try {
@@ -113,10 +140,21 @@ async function fetchViewCounts(
     }
     const data = await res.json();
     return Object.fromEntries(
-      (data.items ?? []).map((v: { id: string; statistics: { viewCount?: string } }) => [
-        v.id,
-        Number(v.statistics.viewCount ?? 0),
-      ])
+      (
+        data.items ?? []
+      ).map(
+        (v: {
+          id: string;
+          statistics: { viewCount?: string };
+          contentDetails: { duration: string };
+        }) => [
+          v.id,
+          {
+            viewCount: Number(v.statistics.viewCount ?? 0),
+            durationSeconds: parseIsoDurationSeconds(v.contentDetails.duration),
+          },
+        ]
+      )
     );
   } catch (err) {
     console.error("[sync-media] YouTube stats request error:", err);
@@ -272,18 +310,22 @@ export async function POST(request: NextRequest) {
           25,
           youtubeKey
         );
-        const viewCounts = await fetchViewCounts(
+        const details = await fetchVideoDetails(
           items.map((item) => item.id.videoId),
           youtubeKey
         );
-        // Filter to videos that clear the recency/view-count bar, but keep
-        // YouTube's own relevance ordering rather than re-sorting by raw
-        // view count - a tangential mega-viral video (e.g. about a nearby
-        // city that just happens to mention this destination) would
-        // otherwise leapfrog genuinely on-topic results.
-        const qualifying = items.filter((item) =>
-          qualifies(item.snippet.publishedAt, viewCounts[item.id.videoId] ?? 0)
-        );
+        // Filter to videos that clear the recency/view-count/duration bar
+        // and aren't from a known auto-dubbed channel, but keep YouTube's
+        // own relevance ordering rather than re-sorting by raw view count -
+        // a tangential mega-viral video (e.g. about a nearby city that just
+        // happens to mention this destination) would otherwise leapfrog
+        // genuinely on-topic results.
+        const qualifying = items.filter((item) => {
+          if (BLOCKED_CHANNEL_IDS.has(item.snippet.channelId)) return false;
+          const d = details[item.id.videoId];
+          if (!d) return false;
+          return qualifies(item.snippet.publishedAt, d.viewCount, d.durationSeconds);
+        });
 
         let insertedForDest = 0;
         for (const item of qualifying) {
