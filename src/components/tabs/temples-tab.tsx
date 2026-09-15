@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import { Clock, MapPin, Shirt, Sparkles } from "lucide-react";
 import { useDestinationTable } from "@/hooks/use-destination-table";
 import { extractLabeled } from "@/lib/parse-notes";
@@ -135,6 +136,17 @@ export function TemplesTab({ destinationId, destinationSlug }: TemplesTabProps) 
                 >
                   AI Generated
                 </Badge>
+              )}
+              {temple.photo_url && (
+                <div className="relative h-[160px] w-full bg-gradient-to-br from-primary/40 to-secondary/40">
+                  <Image
+                    src={temple.photo_url}
+                    alt={temple.name}
+                    fill
+                    sizes="(max-width: 640px) 100vw, 50vw"
+                    className="object-cover"
+                  />
+                </div>
               )}
               <CardContent className="flex flex-col gap-1.5 pt-1">
                 <div className="flex items-start justify-between gap-2 pr-20">
