@@ -54,6 +54,7 @@ interface SyncResult {
 interface EnrichResult {
   enriched: { hotels: number; attractions: number };
   skipped: number;
+  noMatch: number;
   errors: number;
 }
 
@@ -462,6 +463,9 @@ export default function AdminPage() {
           </AlertTitle>
           <AlertDescription className="flex flex-wrap gap-1.5">
             <Badge variant="secondary">{enrichResult.skipped} skipped (recently enriched)</Badge>
+            {enrichResult.noMatch > 0 && (
+              <Badge variant="secondary">{enrichResult.noMatch} no Google match</Badge>
+            )}
             {enrichResult.errors > 0 && (
               <Badge variant="destructive">{enrichResult.errors} errors</Badge>
             )}

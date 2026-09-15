@@ -64,12 +64,18 @@ function isPlausibleMatch(sourceName: string, resultName: string, city: string):
   return Array.from(sourceTokens).some((token) => resultTokens.has(token));
 }
 
+// Return value distinguishes two different kinds of "nothing found" so
+// callers can track them separately: `null` means the search definitively
+// found no plausible match (zero results, or a result rejected by the
+// relevance guard) - not a problem, just nothing to enrich. `undefined`
+// means the search itself failed (missing key, network error, bad HTTP
+// status) - a real error worth surfacing. Either way this never throws.
 export async function searchPlace(
   name: string,
   city: string
-): Promise<PlaceSearchResult | null> {
+): Promise<PlaceSearchResult | null | undefined> {
   const apiKey = process.env.GOOGLE_PLACES_API_KEY;
-  if (!apiKey) return null;
+  if (!apiKey) return undefined;
 
   try {
     const url = new URL(`${PLACES_BASE}/textsearch/json`);
@@ -79,12 +85,13 @@ export async function searchPlace(
     const res = await fetch(url.toString());
     if (!res.ok) {
       console.error(`[google-places] textsearch request failed (${res.status}) for "${name}"`);
-      return null;
+      return undefined;
     }
 
     const data = await res.json();
     if (data.status !== "OK" && data.status !== "ZERO_RESULTS") {
       console.error(`[google-places] textsearch status "${data.status}" for "${name}"`);
+      return undefined;
     }
 
     const first = data.results?.[0];
@@ -104,7 +111,7 @@ export async function searchPlace(
     };
   } catch (err) {
     console.error(`[google-places] searchPlace error for "${name}":`, err);
-    return null;
+    return undefined;
   }
 }
 

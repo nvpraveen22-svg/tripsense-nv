@@ -83,6 +83,7 @@ export async function POST(request: NextRequest) {
   let hotelsEnriched = 0;
   let attractionsEnriched = 0;
   let skipped = 0;
+  let noMatch = 0;
   let errors = 0;
 
   for (const dest of (destinations ?? []) as DestinationRow[]) {
@@ -106,8 +107,12 @@ export async function POST(request: NextRequest) {
 
           const found = await searchPlace(hotel.name, cityName);
           await sleep(200);
-          if (!found) {
+          if (found === undefined) {
             errors++;
+            continue;
+          }
+          if (found === null) {
+            noMatch++;
             continue;
           }
 
@@ -160,8 +165,12 @@ export async function POST(request: NextRequest) {
 
           const found = await searchPlace(attraction.name, cityName);
           await sleep(200);
-          if (!found) {
+          if (found === undefined) {
             errors++;
+            continue;
+          }
+          if (found === null) {
+            noMatch++;
             continue;
           }
 
@@ -191,6 +200,7 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({
     enriched: { hotels: hotelsEnriched, attractions: attractionsEnriched },
     skipped,
+    noMatch,
     errors,
   });
 }
