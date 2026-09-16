@@ -128,9 +128,11 @@ export default function Home() {
                       <SelectItem key={destination.id} value={destination.slug}>
                         <div className="flex flex-col">
                           <span>{destination.name}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {destination.state}
-                          </span>
+                          {destination.state && (
+                            <span className="text-xs text-muted-foreground">
+                              {destination.state}
+                            </span>
+                          )}
                         </div>
                       </SelectItem>
                     ))}
@@ -169,9 +171,11 @@ export default function Home() {
                       <div className="h-full w-full bg-gradient-to-br from-primary to-secondary" />
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-transparent" />
-                    <span className="absolute left-1.5 top-1.5 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-medium text-foreground shadow-sm">
-                      {destination.state}
-                    </span>
+                    {destination.state && (
+                      <span className="absolute left-1.5 top-1.5 rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-medium text-foreground shadow-sm">
+                        {destination.state}
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center justify-between gap-1 p-2.5">
                     <div className="flex flex-col gap-0.5 overflow-hidden">

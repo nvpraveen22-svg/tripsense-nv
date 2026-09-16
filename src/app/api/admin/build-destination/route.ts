@@ -19,6 +19,17 @@ const MONTHS = [
   "July", "August", "September", "October", "November", "December",
 ];
 
+const INDIAN_STATES = [
+  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
+  "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
+  "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya",
+  "Mizoram", "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim",
+  "Tamil Nadu", "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand",
+  "West Bengal", "Andaman and Nicobar Islands", "Chandigarh",
+  "Dadra and Nagar Haveli and Daman and Diu", "Delhi",
+  "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry",
+];
+
 function generateSlug(name: string): string {
   return name
     .toLowerCase()
@@ -137,6 +148,7 @@ const responseSchema: Schema = {
     destination: {
       type: SchemaType.OBJECT,
       properties: {
+        state: { type: SchemaType.STRING, format: "enum", enum: INDIAN_STATES },
         tagline: { type: SchemaType.STRING },
         description: { type: SchemaType.STRING },
         best_time_to_visit: { type: SchemaType.STRING },
@@ -158,7 +170,7 @@ const responseSchema: Schema = {
         },
       },
       required: [
-        "tagline", "description", "best_time_to_visit", "ideal_trip_days_min",
+        "state", "tagline", "description", "best_time_to_visit", "ideal_trip_days_min",
         "ideal_trip_days_max", "history_culture", "month_notes",
         "best_months", "okay_months", "avoid_months",
       ],
@@ -173,6 +185,7 @@ const responseSchema: Schema = {
 };
 
 interface GeneratedDestination {
+  state: string;
   tagline: string;
   description: string;
   best_time_to_visit: string;
@@ -313,7 +326,7 @@ export async function POST(request: NextRequest) {
 Destination name: ${name}${stateHint ? `\nState: ${stateHint}` : "\n(Infer the correct real Indian state for this destination.)"}
 
 Generate a complete, realistic destination guide as a JSON object with exactly this shape:
-- destination: tagline, description, best_time_to_visit, ideal_trip_days_min, ideal_trip_days_max, history_culture, month_notes, best_months (array of month names), okay_months, avoid_months
+- destination: state (the correct real Indian state or union territory ${name} is located in — always fill this in accurately even if a state was given above), tagline, description, best_time_to_visit, ideal_trip_days_min, ideal_trip_days_max, history_culture, month_notes, best_months (array of month names), okay_months, avoid_months
 - attractions: exactly 6 real, well-known attractions/sights near this destination
 - hotels: exactly 5 realistic hotels or stays spanning budget to luxury (set warning_flag true only if there's a genuine, common practical caveat for that property, e.g. remote location or seasonal closure, otherwise false with warning_reason as an empty string)
 - activities: exactly 5 things travellers can do there
@@ -359,7 +372,7 @@ All costs must be in Indian Rupees (numbers only, no currency symbols). Month na
     .insert({
       name,
       slug,
-      state: stateHint || "",
+      state: stateHint || parsed.destination.state,
       tagline: parsed.destination.tagline,
       description: parsed.destination.description,
       best_time_to_visit: parsed.destination.best_time_to_visit,
