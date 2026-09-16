@@ -50,7 +50,9 @@ function significantTokens(text: string, exclude: Set<string>): Set<string> {
 // distinctive word in common before trusting a result; with nothing
 // distinctive to check (e.g. the name is just generic words + city), fall
 // back to trusting the API since there's no way to verify either way.
-function isPlausibleMatch(sourceName: string, resultName: string, city: string): boolean {
+// Exported so other Text Search callers (e.g. google-places-photos.ts) can
+// apply the same guard instead of duplicating it.
+export function isPlausibleMatch(sourceName: string, resultName: string, city: string): boolean {
   const cityTokens = new Set(
     city
       .toLowerCase()

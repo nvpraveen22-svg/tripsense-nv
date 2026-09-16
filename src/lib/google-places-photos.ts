@@ -7,6 +7,8 @@
 // status) it returns null rather than throwing, so a single bad lookup
 // never breaks a batch job.
 
+import { isPlausibleMatch } from "@/lib/google-places";
+
 const PLACES_BASE = "https://maps.googleapis.com/maps/api/place";
 
 function buildPhotoUrl(photoReference: string, apiKey: string): string {
@@ -47,8 +49,16 @@ export async function getPlacePhoto(
       return null;
     }
 
-    const photoReference = data.results?.[0]?.photos?.[0]?.photo_reference;
+    const first = data.results?.[0];
+    const photoReference = first?.photos?.[0]?.photo_reference;
     if (!photoReference) return null;
+
+    if (!isPlausibleMatch(name, first.name ?? "", locationContext)) {
+      console.warn(
+        `[google-places-photos] rejecting low-confidence match: "${name}" -> "${first.name}"`
+      );
+      return null;
+    }
 
     return buildPhotoUrl(photoReference, apiKey);
   } catch (err) {
