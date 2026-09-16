@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase-admin";
+import { syncPhotosForDestination } from "@/lib/sync-photos";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -240,9 +241,18 @@ export async function POST(request: NextRequest) {
   let photosSynced = 0;
   let imagesSynced = 0;
   let videosSynced = 0;
+  let attractionPhotosSynced = 0;
+  let templePhotosSynced = 0;
   let skipped = 0;
 
   for (const dest of (destinations ?? []) as DestinationRow[]) {
+    // Step: attraction/temple photos
+    if (unsplashKey) {
+      const photos = await syncPhotosForDestination(dest.id, dest.name);
+      attractionPhotosSynced += photos.attraction_photos;
+      templePhotosSynced += photos.temple_photos;
+    }
+
     // Step: destination cover/hero image
     if (unsplashKey && (!dest.cover_image_url || !dest.hero_url)) {
       const results = await searchUnsplash(`${dest.name} ${dest.state} India travel`, 3, unsplashKey);
@@ -353,7 +363,13 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json({
-    synced: { photos: photosSynced, images: imagesSynced, videos: videosSynced },
+    synced: {
+      photos: photosSynced,
+      images: imagesSynced,
+      videos: videosSynced,
+      attractionPhotos: attractionPhotosSynced,
+      templePhotos: templePhotosSynced,
+    },
     skipped,
   });
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI, SchemaType, type Schema } from "@google/generative-ai";
 import { createAdminClient } from "@/lib/supabase-admin";
 import { searchPlace, getPlaceDetails } from "@/lib/google-places";
+import { syncPhotosForDestination } from "@/lib/sync-photos";
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -499,11 +500,14 @@ All costs must be in Indian Rupees (numbers only, no currency symbols). Month na
     counts.howToReach = parsed.how_to_reach.length;
   }
 
+  const photos = await syncPhotosForDestination(destinationId, name);
+
   return NextResponse.json({
     success: true,
     slug,
     destinationId,
     counts,
     places_enriched: placesEnriched,
+    photos: { attractions: photos.attraction_photos, temples: photos.temple_photos },
   });
 }
