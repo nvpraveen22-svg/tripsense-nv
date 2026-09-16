@@ -500,7 +500,11 @@ All costs must be in Indian Rupees (numbers only, no currency symbols). Month na
     counts.howToReach = parsed.how_to_reach.length;
   }
 
-  const photos = await syncPhotosForDestination(destinationId, name);
+  // Fire-and-forget: don't make the admin wait on photo lookups for a
+  // destination that's already fully built and usable.
+  syncPhotosForDestination(destinationId, name, supabase).catch((err) =>
+    console.error("[build-destination] photo sync failed:", err)
+  );
 
   return NextResponse.json({
     success: true,
@@ -508,6 +512,6 @@ All costs must be in Indian Rupees (numbers only, no currency symbols). Month na
     destinationId,
     counts,
     places_enriched: placesEnriched,
-    photos: { attractions: photos.attraction_photos, temples: photos.temple_photos },
+    photoSyncStarted: true,
   });
 }

@@ -250,12 +250,11 @@ export async function POST(request: NextRequest) {
   let skipped = 0;
 
   for (const dest of (destinations ?? []) as DestinationRow[]) {
-    // Step: attraction/temple photos
-    if (unsplashKey) {
-      const photos = await syncPhotosForDestination(dest.id, dest.name);
-      attractionPhotosSynced += photos.attraction_photos;
-      templePhotosSynced += photos.temple_photos;
-    }
+    // Step: attraction/temple photos (Google Places first, Unsplash fallback —
+    // handles missing keys internally, so this runs regardless of unsplashKey)
+    const photos = await syncPhotosForDestination(dest.id, dest.name, supabase);
+    attractionPhotosSynced += photos.attraction_photos;
+    templePhotosSynced += photos.temple_photos;
 
     // Step: destination cover/hero image
     if (unsplashKey && (!dest.cover_image_url || !dest.hero_url)) {
