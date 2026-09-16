@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { ArrowLeft, MapPin } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import type { Destination } from "@/types";
@@ -94,6 +95,10 @@ export default function DestinationPage({
         <Skeleton className="h-40 w-full rounded-xl" />
       </div>
     );
+  }
+
+  if (destination && !destination.is_active) {
+    notFound();
   }
 
   if (error || !destination) {

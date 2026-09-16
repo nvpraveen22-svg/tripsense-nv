@@ -34,6 +34,7 @@ export default function Home() {
       const { data, error: fetchError } = await supabase
         .from("destinations")
         .select("*")
+        .eq("is_active", true)
         .order("name", { ascending: true });
 
       if (cancelled) return;

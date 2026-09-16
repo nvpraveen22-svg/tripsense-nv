@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   CheckCircle2,
@@ -11,6 +11,9 @@ import {
   Rocket,
   ArrowRight,
   MapPin,
+  Pause,
+  Play,
+  Trash2,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -22,6 +25,7 @@ import {
   DestinationAutocomplete,
   type DestinationSuggestion,
 } from "@/components/destination-autocomplete";
+import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
 const STEPS = [
@@ -58,6 +62,14 @@ interface EnrichResult {
   errors: number;
 }
 
+interface ManagedDestination {
+  id: string;
+  name: string;
+  state: string;
+  slug: string;
+  is_active: boolean;
+}
+
 export default function AdminPage() {
   const [pin, setPin] = useState("");
   const [verified, setVerified] = useState(false);
@@ -82,6 +94,100 @@ export default function AdminPage() {
   const [enriching, setEnriching] = useState(false);
   const [enrichResult, setEnrichResult] = useState<EnrichResult | null>(null);
   const [enrichError, setEnrichError] = useState<string | null>(null);
+
+  const [destinations, setDestinations] = useState<ManagedDestination[]>([]);
+  const [destinationsLoading, setDestinationsLoading] = useState(false);
+  const [destinationsError, setDestinationsError] = useState<string | null>(null);
+  const [rowBusyId, setRowBusyId] = useState<string | null>(null);
+  const [flashUpdatedId, setFlashUpdatedId] = useState<string | null>(null);
+  const [fadingOutId, setFadingOutId] = useState<string | null>(null);
+
+  async function loadDestinations() {
+    setDestinationsLoading(true);
+    setDestinationsError(null);
+    const { data, error: fetchError } = await supabase
+      .from("destinations")
+      .select("id, name, state, slug, is_active")
+      .order("name", { ascending: true });
+    if (fetchError) {
+      setDestinationsError("Couldn't load destinations.");
+    } else {
+      setDestinations(data ?? []);
+    }
+    setDestinationsLoading(false);
+  }
+
+  useEffect(() => {
+    if (verified) {
+      loadDestinations();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [verified]);
+
+  async function handleToggleDestination(destination: ManagedDestination) {
+    if (rowBusyId) return;
+    setRowBusyId(destination.id);
+    setDestinationsError(null);
+    try {
+      const res = await fetch("/api/admin/toggle-destination", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pin,
+          destinationId: destination.id,
+          isActive: !destination.is_active,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.updated) {
+        await loadDestinations();
+        setFlashUpdatedId(destination.id);
+        setTimeout(() => setFlashUpdatedId(null), 2000);
+      } else {
+        setDestinationsError(data.error ?? "Couldn't update destination.");
+      }
+    } catch {
+      setDestinationsError("Couldn't update destination. Please try again.");
+    } finally {
+      setRowBusyId(null);
+    }
+  }
+
+  async function handleDeleteDestination(destination: ManagedDestination) {
+    if (rowBusyId) return;
+    const confirmed = window.confirm(
+      `Are you sure you want to permanently delete ${destination.name}? All attractions, hotels, temples, media and itineraries will be lost. This cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    setRowBusyId(destination.id);
+    setDestinationsError(null);
+    try {
+      const res = await fetch("/api/admin/delete-destination", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pin,
+          destinationId: destination.id,
+          destinationSlug: destination.slug,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.deleted) {
+        setFadingOutId(destination.id);
+        setTimeout(() => {
+          setDestinations((prev) => prev.filter((d) => d.id !== destination.id));
+          setFadingOutId(null);
+        }, 300);
+      } else {
+        setDestinationsError(data.error ?? "Couldn't delete destination.");
+      }
+    } catch {
+      setDestinationsError("Couldn't delete destination. Please try again.");
+    } finally {
+      setRowBusyId(null);
+    }
+  }
 
   async function handleVerify() {
     setVerifying(true);
@@ -471,6 +577,116 @@ export default function AdminPage() {
               <Badge variant="destructive">{enrichResult.errors} errors</Badge>
             )}
           </AlertDescription>
+        </Alert>
+      )}
+
+      <div className="flex flex-col gap-1 pt-2">
+        <h2 className="text-base font-semibold text-foreground">📋 Manage Destinations</h2>
+        <p className="text-sm text-muted-foreground">
+          Activate, deactivate, or permanently delete destinations. Inactive destinations are
+          hidden from the public site but kept in the database.
+        </p>
+      </div>
+
+      <Card className="w-full rounded-xl bg-background shadow-sm">
+        <CardContent className="flex flex-col gap-1 pt-1">
+          {destinationsLoading ? (
+            <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
+              <Loader2 className="size-4 animate-spin" />
+              Loading destinations...
+            </div>
+          ) : (
+            <>
+              <p className="pb-2 text-xs font-medium text-muted-foreground">
+                {destinations.filter((d) => d.is_active).length} active ·{" "}
+                {destinations.filter((d) => !d.is_active).length} inactive
+              </p>
+              {destinations.length === 0 ? (
+                <p className="py-4 text-sm text-muted-foreground">No destinations yet.</p>
+              ) : (
+                destinations.map((destination) => (
+                  <div
+                    key={destination.id}
+                    className={cn(
+                      "flex flex-wrap items-center gap-2 border-b border-border py-2.5 last:border-b-0 transition-opacity duration-300",
+                      !destination.is_active && "opacity-60",
+                      fadingOutId === destination.id && "opacity-0"
+                    )}
+                  >
+                    <div className="flex min-w-0 flex-1 flex-col">
+                      <span className="truncate text-sm font-medium text-foreground">
+                        {destination.name}
+                        <span className="text-muted-foreground"> — {destination.state}</span>
+                      </span>
+                    </div>
+
+                    {destination.is_active ? (
+                      <Badge className="gap-1 border-transparent bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-400">
+                        ● Active
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary" className="gap-1">
+                        ● Inactive
+                      </Badge>
+                    )}
+
+                    {flashUpdatedId === destination.id && (
+                      <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                        ✓ Updated
+                      </span>
+                    )}
+
+                    <div className="flex items-center gap-1.5">
+                      {destination.is_active ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 gap-1 px-2 text-xs text-muted-foreground"
+                          disabled={rowBusyId === destination.id}
+                          onClick={() => handleToggleDestination(destination)}
+                        >
+                          <Pause className="size-3" />
+                          Deactivate
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 gap-1 px-2 text-xs border-emerald-600 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-500/10"
+                          disabled={rowBusyId === destination.id}
+                          onClick={() => handleToggleDestination(destination)}
+                        >
+                          <Play className="size-3" />
+                          Activate
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 gap-1 px-2 text-xs border-destructive text-destructive hover:bg-destructive/10"
+                        disabled={rowBusyId === destination.id}
+                        onClick={() => handleDeleteDestination(destination)}
+                      >
+                        {rowBusyId === destination.id ? (
+                          <Loader2 className="size-3 animate-spin" />
+                        ) : (
+                          <Trash2 className="size-3" />
+                        )}
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </>
+          )}
+        </CardContent>
+      </Card>
+
+      {destinationsError && (
+        <Alert variant="destructive">
+          <AlertTitle>Something went wrong</AlertTitle>
+          <AlertDescription>{destinationsError}</AlertDescription>
         </Alert>
       )}
     </div>

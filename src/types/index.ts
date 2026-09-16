@@ -22,6 +22,7 @@ export interface Destination {
   avoid_months: string[] | null;
   month_notes: string | null; // JSON-encoded {"range label": "note"}, stored as text
   history_culture: string | null;
+  is_active: boolean;
 }
 
 export interface Attraction {
