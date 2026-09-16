@@ -4,7 +4,11 @@ import { createAdminClient } from "@/lib/supabase-admin";
 import { syncPhotosForDestination } from "@/lib/sync-photos";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+// An unscoped run (no destinationSlug) now walks every destination doing
+// attraction/temple photo sync on top of the existing cover/media/video
+// steps, which can add up across ~20 destinations on a fresh backfill —
+// raised from 60s to the platform max to give that headroom.
+export const maxDuration = 300;
 
 interface UnsplashPhoto {
   urls: { regular: string; small: string };
