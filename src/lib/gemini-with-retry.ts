@@ -1,20 +1,48 @@
 import type { GenerateContentResult, GenerativeModel } from "@google/generative-ai";
 
-const RETRY_DELAYS_MS = [3000, 6000, 12000];
+const RETRY_DELAYS_MS = [5000, 10000, 20000, 30000, 45000, 60000];
 
 export const GEMINI_OVERLOAD_MESSAGE =
   "Gemini AI is experiencing high demand right now. Please wait a few minutes and try again.";
 
 export class GeminiOverloadedError extends Error {
-  constructor() {
-    super(GEMINI_OVERLOAD_MESSAGE);
+  constructor(cause?: unknown) {
+    super(GEMINI_OVERLOAD_MESSAGE, cause !== undefined ? { cause } : undefined);
     this.name = "GeminiOverloadedError";
   }
 }
 
+// The SDK's own error class carries the real HTTP status when the fetch
+// went through (GoogleGenerativeAIFetchError#status/statusText/errorDetails)
+// — checking that directly is more reliable than regexing the message, which
+// is what we fall back to for errors that never got that far (e.g. network).
 function isOverloadedError(err: unknown): boolean {
+  const status = (err as { status?: number } | undefined)?.status;
+  if (status === 503) return true;
   const message = err instanceof Error ? err.message : String(err);
   return /503|high demand|Service Unavailable/i.test(message);
+}
+
+// Best-effort extraction of whatever diagnostic detail the error carries,
+// for surfacing in API responses so a stuck build is debuggable from the
+// admin UI instead of only the server logs.
+export function describeGeminiError(err: unknown): string | undefined {
+  if (!err) return undefined;
+  const e = err as {
+    status?: number;
+    statusText?: string;
+    errorDetails?: unknown;
+    message?: string;
+  };
+  if (e.status || e.statusText || e.errorDetails) {
+    const parts = [
+      e.status ? `status ${e.status}` : null,
+      e.statusText || null,
+      e.errorDetails ? JSON.stringify(e.errorDetails) : null,
+    ].filter(Boolean);
+    return parts.join(" — ") || e.message;
+  }
+  return err instanceof Error ? err.message : String(err);
 }
 
 function sleep(ms: number): Promise<void> {
@@ -23,8 +51,13 @@ function sleep(ms: number): Promise<void> {
 
 /**
  * Calls model.generateContent(prompt), retrying on 503/overload errors with
- * exponential backoff (3s, 6s, 12s). Non-overload errors are rethrown as-is.
- * If all retries are exhausted, throws GeminiOverloadedError.
+ * exponential backoff (5s, 10s, 20s, 30s, 45s, 60s — 6 retries, ~170s total).
+ * Non-overload errors are rethrown as-is. If all retries are exhausted,
+ * throws GeminiOverloadedError with the last error attached as `cause`.
+ *
+ * Callers with a route-level timeout must give this enough headroom (the
+ * worst case is ~170s of sleep plus however long each attempt itself takes)
+ * — see maxDuration on the routes that use this.
  */
 export async function generateContentWithRetry(
   model: GenerativeModel,
@@ -39,7 +72,7 @@ export async function generateContentWithRetry(
 
       if (attempt === RETRY_DELAYS_MS.length) {
         console.error(`${logPrefix} exhausted all retries (overloaded):`, err);
-        throw new GeminiOverloadedError();
+        throw new GeminiOverloadedError(err);
       }
 
       const delay = RETRY_DELAYS_MS[attempt];

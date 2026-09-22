@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI, SchemaType, type Schema } from "@google/generative-ai";
 import { createAdminClient } from "@/lib/supabase-admin";
-import { generateContentWithRetry, GeminiOverloadedError } from "@/lib/gemini-with-retry";
+import {
+  generateContentWithRetry,
+  GeminiOverloadedError,
+  describeGeminiError,
+} from "@/lib/gemini-with-retry";
 
 export const runtime = "nodejs";
+// Retry backoff in generateContentWithRetry can sleep up to ~170s across its
+// 6 attempts before giving up, so this needs more than the platform default.
+export const maxDuration = 300;
 
 const MODEL_NAME = "gemini-3.6-flash";
 
@@ -125,11 +132,18 @@ For each day, plan morning, afternoon, and evening slots with a specific activit
     return NextResponse.json({ plan, saved: true, id: saved.id });
   } catch (err) {
     if (err instanceof GeminiOverloadedError) {
-      return NextResponse.json({ error: err.message }, { status: 503 });
+      return NextResponse.json(
+        { error: err.message, details: describeGeminiError(err.cause) },
+        { status: 503 }
+      );
     }
     console.error("ai-plan generation failed", err);
+    const message = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json(
-      { error: "Couldn't generate an itinerary right now. Please try again." },
+      {
+        error: `Couldn't generate an itinerary right now: ${message}`,
+        details: describeGeminiError(err),
+      },
       { status: 502 }
     );
   }

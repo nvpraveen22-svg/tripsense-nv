@@ -3,7 +3,11 @@ import { GoogleGenerativeAI, SchemaType, type Schema } from "@google/generative-
 import { createAdminClient } from "@/lib/supabase-admin";
 import { searchPlace, getPlaceDetails } from "@/lib/google-places";
 import { syncPhotosForDestination } from "@/lib/sync-photos";
-import { generateContentWithRetry, GeminiOverloadedError } from "@/lib/gemini-with-retry";
+import {
+  generateContentWithRetry,
+  GeminiOverloadedError,
+  describeGeminiError,
+} from "@/lib/gemini-with-retry";
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -355,12 +359,18 @@ All costs must be in Indian Rupees (numbers only, no currency symbols). Month na
     parsed = JSON.parse(result.response.text());
   } catch (err) {
     if (err instanceof GeminiOverloadedError) {
-      return NextResponse.json({ error: err.message }, { status: 503 });
+      return NextResponse.json(
+        { error: err.message, details: describeGeminiError(err.cause) },
+        { status: 503 }
+      );
     }
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("[build-destination] generation failed:", err);
     return NextResponse.json(
-      { error: `Couldn't generate destination content: ${message}` },
+      {
+        error: `Couldn't generate destination content: ${message}`,
+        details: describeGeminiError(err),
+      },
       { status: 502 }
     );
   }

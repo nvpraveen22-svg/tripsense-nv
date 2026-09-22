@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI, SchemaType, type Schema } from "@google/generative-ai";
 import { createAdminClient } from "@/lib/supabase-admin";
-import { generateContentWithRetry, GeminiOverloadedError } from "@/lib/gemini-with-retry";
+import {
+  generateContentWithRetry,
+  GeminiOverloadedError,
+  describeGeminiError,
+} from "@/lib/gemini-with-retry";
 import type { Temple } from "@/types";
 
 export const runtime = "nodejs";
-export const maxDuration = 30;
+// Retry backoff in generateContentWithRetry can sleep up to ~170s across its
+// 6 attempts before giving up, so this needs much more than the old 30s.
+export const maxDuration = 300;
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
 
@@ -124,12 +130,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     generated = JSON.parse(result.response.text());
   } catch (err) {
     if (err instanceof GeminiOverloadedError) {
-      return NextResponse.json({ error: err.message }, { status: 503 });
+      return NextResponse.json(
+        { error: err.message, details: describeGeminiError(err.cause) },
+        { status: 503 }
+      );
     }
     const message = err instanceof Error ? err.message : "Unknown error";
     console.error("[ai-temples] generation failed:", err);
     return NextResponse.json(
-      { error: `Couldn't find temples right now: ${message}` },
+      { error: `Couldn't find temples right now: ${message}`, details: describeGeminiError(err) },
       { status: 502 }
     );
   }

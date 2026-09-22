@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI, SchemaType, type Schema } from "@google/generative-ai";
 import { createAdminClient } from "@/lib/supabase-admin";
-import { generateContentWithRetry, GeminiOverloadedError } from "@/lib/gemini-with-retry";
+import {
+  generateContentWithRetry,
+  GeminiOverloadedError,
+  describeGeminiError,
+} from "@/lib/gemini-with-retry";
 import type { AiInsightsContent } from "@/types";
 
 export const runtime = "nodejs";
+// Retry backoff in generateContentWithRetry can sleep up to ~170s across its
+// 6 attempts before giving up, so this needs more than the platform default.
+export const maxDuration = 300;
 
 const MODEL_NAME = "gemini-3.6-flash";
 const PROMPT_VERSION = 1;
@@ -278,11 +285,18 @@ Produce:
     });
   } catch (err) {
     if (err instanceof GeminiOverloadedError) {
-      return NextResponse.json({ error: err.message }, { status: 503 });
+      return NextResponse.json(
+        { error: err.message, details: describeGeminiError(err.cause) },
+        { status: 503 }
+      );
     }
     console.error("ai-insights generation failed", err);
+    const message = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json(
-      { error: "Couldn't generate insights right now. Please try again." },
+      {
+        error: `Couldn't generate insights right now: ${message}`,
+        details: describeGeminiError(err),
+      },
       { status: 502 }
     );
   }
