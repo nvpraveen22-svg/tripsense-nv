@@ -3,6 +3,7 @@ import { GoogleGenerativeAI, SchemaType, type Schema } from "@google/generative-
 import { createAdminClient } from "@/lib/supabase-admin";
 import { searchPlace, getPlaceDetails } from "@/lib/google-places";
 import { syncPhotosForDestination } from "@/lib/sync-photos";
+import { generateContentWithRetry, GeminiOverloadedError } from "@/lib/gemini-with-retry";
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -345,23 +346,16 @@ All costs must be in Indian Rupees (numbers only, no currency symbols). Month na
     },
   });
 
-  let parsed: GeneratedPayload | undefined;
-  let lastErr: unknown;
-  for (let attempt = 1; attempt <= 2; attempt++) {
-    try {
-      const result = await model.generateContent(prompt);
-      parsed = JSON.parse(result.response.text());
-      break;
-    } catch (err) {
-      lastErr = err;
-      console.error(`[build-destination] attempt ${attempt} failed:`, err);
-      if (attempt < 2) await new Promise((r) => setTimeout(r, 1500));
+  let parsed: GeneratedPayload;
+  try {
+    const result = await generateContentWithRetry(model, prompt, "[build-destination]");
+    parsed = JSON.parse(result.response.text());
+  } catch (err) {
+    if (err instanceof GeminiOverloadedError) {
+      return NextResponse.json({ error: err.message }, { status: 503 });
     }
-  }
-
-  if (!parsed) {
-    const message = lastErr instanceof Error ? lastErr.message : "Unknown error";
-    console.error("[build-destination] all attempts failed:", lastErr);
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("[build-destination] generation failed:", err);
     return NextResponse.json(
       { error: `Couldn't generate destination content: ${message}` },
       { status: 502 }

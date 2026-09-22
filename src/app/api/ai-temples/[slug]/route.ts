@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI, SchemaType, type Schema } from "@google/generative-ai";
 import { createAdminClient } from "@/lib/supabase-admin";
+import { generateContentWithRetry, GeminiOverloadedError } from "@/lib/gemini-with-retry";
 import type { Temple } from "@/types";
 
 export const runtime = "nodejs";
@@ -117,23 +118,16 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     },
   });
 
-  let generated: GeneratedTemple[] | undefined;
-  let lastErr: unknown;
-  for (let attempt = 1; attempt <= 2; attempt++) {
-    try {
-      const result = await model.generateContent(prompt);
-      generated = JSON.parse(result.response.text());
-      break;
-    } catch (err) {
-      lastErr = err;
-      console.error(`[ai-temples] attempt ${attempt} failed:`, err);
-      if (attempt < 2) await new Promise((r) => setTimeout(r, 1500));
+  let generated: GeneratedTemple[];
+  try {
+    const result = await generateContentWithRetry(model, prompt, "[ai-temples]");
+    generated = JSON.parse(result.response.text());
+  } catch (err) {
+    if (err instanceof GeminiOverloadedError) {
+      return NextResponse.json({ error: err.message }, { status: 503 });
     }
-  }
-
-  if (!generated) {
-    const message = lastErr instanceof Error ? lastErr.message : "Unknown error";
-    console.error("[ai-temples] all attempts failed:", lastErr);
+    const message = err instanceof Error ? err.message : "Unknown error";
+    console.error("[ai-temples] generation failed:", err);
     return NextResponse.json(
       { error: `Couldn't find temples right now: ${message}` },
       { status: 502 }

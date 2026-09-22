@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI, SchemaType, type Schema } from "@google/generative-ai";
 import { createAdminClient } from "@/lib/supabase-admin";
+import { generateContentWithRetry, GeminiOverloadedError } from "@/lib/gemini-with-retry";
 import type { AiInsightsContent } from "@/types";
 
 export const runtime = "nodejs";
@@ -249,7 +250,7 @@ Produce:
       },
     });
 
-    const result = await model.generateContent(prompt);
+    const result = await generateContentWithRetry(model, prompt, "[ai-insights]");
     const content: AiInsightsContent = JSON.parse(result.response.text());
     const generatedAt = new Date().toISOString();
 
@@ -276,6 +277,9 @@ Produce:
       saved: !upsertError,
     });
   } catch (err) {
+    if (err instanceof GeminiOverloadedError) {
+      return NextResponse.json({ error: err.message }, { status: 503 });
+    }
     console.error("ai-insights generation failed", err);
     return NextResponse.json(
       { error: "Couldn't generate insights right now. Please try again." },

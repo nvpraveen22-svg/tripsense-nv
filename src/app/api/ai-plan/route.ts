@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI, SchemaType, type Schema } from "@google/generative-ai";
 import { createAdminClient } from "@/lib/supabase-admin";
+import { generateContentWithRetry, GeminiOverloadedError } from "@/lib/gemini-with-retry";
 
 export const runtime = "nodejs";
 
@@ -98,7 +99,7 @@ For each day, plan morning, afternoon, and evening slots with a specific activit
       },
     });
 
-    const result = await model.generateContent(prompt);
+    const result = await generateContentWithRetry(model, prompt, "[ai-plan]");
     const text = result.response.text();
     const plan = JSON.parse(text);
 
@@ -123,6 +124,9 @@ For each day, plan morning, afternoon, and evening slots with a specific activit
 
     return NextResponse.json({ plan, saved: true, id: saved.id });
   } catch (err) {
+    if (err instanceof GeminiOverloadedError) {
+      return NextResponse.json({ error: err.message }, { status: 503 });
+    }
     console.error("ai-plan generation failed", err);
     return NextResponse.json(
       { error: "Couldn't generate an itinerary right now. Please try again." },
