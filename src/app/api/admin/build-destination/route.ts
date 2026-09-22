@@ -10,7 +10,10 @@ function sleep(ms: number) {
 }
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+// Photo sync (Google Places + Unsplash, one request per attraction/temple
+// with a 600ms pace) now runs inline so its counts can be reported in the
+// response, so this needs the same headroom as sync-media's 300s.
+export const maxDuration = 300;
 
 // gemini-2.0-flash is retired for this API key; gemini-3.6-flash is the
 // model already proven working across this project's Gemini routes.
@@ -392,120 +395,164 @@ All costs must be in Indian Rupees (numbers only, no currency symbols). Month na
   }
 
   const destinationId = destinationRow.id;
-  const counts = { attractions: 0, hotels: 0, activities: 0, howToReach: 0, temples: 0 };
 
-  const { error: attractionsError } = await supabase.from("attractions").insert(
-    parsed.attractions.map((a, i) => ({ ...a, destination_id: destinationId, sort_order: i + 1 }))
-  );
-  if (attractionsError) {
-    console.error("[build-destination] attractions insert failed:", attractionsError.message);
-  } else {
-    counts.attractions = parsed.attractions.length;
+  // From here on, the destination row exists and is reachable at its slug —
+  // every remaining step is best-effort. Each is isolated in its own
+  // try/catch so one failure (e.g. Gemini's how_to_reach array not matching
+  // a DB constraint) can't take down sections that already succeeded.
+  type StepResult = { count: number } | { error: string };
+  const results: {
+    attractions: StepResult;
+    hotels: StepResult;
+    activities: StepResult;
+    howToReach: StepResult;
+    temples: StepResult;
+    photos: { attraction_photos: number; temple_photos: number } | { error: string };
+  } = {
+    attractions: { count: 0 },
+    hotels: { count: 0 },
+    activities: { count: 0 },
+    howToReach: { count: 0 },
+    temples: { count: 0 },
+    photos: { attraction_photos: 0, temple_photos: 0 },
+  };
+
+  function errorMessage(err: unknown): string {
+    return err instanceof Error ? err.message : "Unknown error";
   }
 
-  const { data: insertedHotels, error: hotelsError } = await supabase
-    .from("hotels")
-    .insert(
-      parsed.hotels.map((h) => ({
-        ...h,
-        // hotels_stars_check requires stars >= 3; Gemini has no visibility
-        // into that DB constraint, so clamp rather than let one budget
-        // property fail the whole batch insert.
-        stars: Math.max(3, h.stars),
-        destination_id: destinationId,
-      }))
-    )
-    .select("id, name");
-  if (hotelsError) {
-    console.error("[build-destination] hotels insert failed:", hotelsError.message);
-  } else {
-    counts.hotels = parsed.hotels.length;
+  try {
+    const { error } = await supabase.from("attractions").insert(
+      parsed.attractions.map((a, i) => ({ ...a, destination_id: destinationId, sort_order: i + 1 }))
+    );
+    if (error) throw new Error(error.message);
+    results.attractions = { count: parsed.attractions.length };
+  } catch (err) {
+    console.error("[build-destination] attractions insert failed:", err);
+    results.attractions = { error: errorMessage(err) };
+  }
+
+  let insertedHotels: { id: string; name: string }[] | null = null;
+  try {
+    const { data, error } = await supabase
+      .from("hotels")
+      .insert(
+        parsed.hotels.map((h) => ({
+          ...h,
+          // hotels_stars_check requires stars >= 3; Gemini has no visibility
+          // into that DB constraint, so clamp rather than let one budget
+          // property fail the whole batch insert.
+          stars: Math.max(3, h.stars),
+          destination_id: destinationId,
+        }))
+      )
+      .select("id, name");
+    if (error) throw new Error(error.message);
+    insertedHotels = data as { id: string; name: string }[];
+    results.hotels = { count: parsed.hotels.length };
+  } catch (err) {
+    console.error("[build-destination] hotels insert failed:", err);
+    results.hotels = { error: errorMessage(err) };
   }
 
   // Best-effort: enrich the newly-inserted hotels with real Google ratings/
   // contact info. Capped at 5 (== the hotel count Gemini always generates)
   // to bound Places API quota per destination build; skipped entirely if no
   // key is configured, same "log and continue" pattern as the Unsplash/
-  // YouTube keys in sync-media.
+  // YouTube keys in sync-media. Informational only — not part of `results`,
+  // since a hotel row without enrichment is still a perfectly usable hotel.
   let placesEnriched = 0;
   if (!process.env.GOOGLE_PLACES_API_KEY) {
     console.warn(
       "[build-destination] GOOGLE_PLACES_API_KEY is not set — skipping hotel enrichment."
     );
   } else if (insertedHotels) {
-    const cityName = `${name} ${stateHint ?? ""}`.trim();
-    for (const hotel of insertedHotels.slice(0, 5) as { id: string; name: string }[]) {
-      const found = await searchPlace(hotel.name, cityName);
-      await sleep(200);
-      if (!found) continue;
+    try {
+      const cityName = `${name} ${stateHint ?? ""}`.trim();
+      for (const hotel of insertedHotels.slice(0, 5)) {
+        const found = await searchPlace(hotel.name, cityName);
+        await sleep(200);
+        if (!found) continue;
 
-      const details = await getPlaceDetails(found.placeId);
-      await sleep(200);
+        const details = await getPlaceDetails(found.placeId);
+        await sleep(200);
 
-      const { error: enrichError } = await supabase
-        .from("hotels")
-        .update({
-          google_rating: details?.rating ?? found.rating,
-          google_reviews_count: details?.userRatingsTotal ?? found.userRatingsTotal,
-          phone: details?.phone ?? null,
-          website: details?.website ?? null,
-          google_place_id: found.placeId,
-          places_enriched_at: new Date().toISOString(),
-        })
-        .eq("id", hotel.id);
+        const { error: enrichError } = await supabase
+          .from("hotels")
+          .update({
+            google_rating: details?.rating ?? found.rating,
+            google_reviews_count: details?.userRatingsTotal ?? found.userRatingsTotal,
+            phone: details?.phone ?? null,
+            website: details?.website ?? null,
+            google_place_id: found.placeId,
+            places_enriched_at: new Date().toISOString(),
+          })
+          .eq("id", hotel.id);
 
-      if (enrichError) {
-        console.error(
-          `[build-destination] hotel enrichment failed for "${hotel.name}":`,
-          enrichError.message
-        );
-      } else {
-        placesEnriched++;
+        if (enrichError) {
+          console.error(
+            `[build-destination] hotel enrichment failed for "${hotel.name}":`,
+            enrichError.message
+          );
+        } else {
+          placesEnriched++;
+        }
       }
+    } catch (err) {
+      console.error("[build-destination] hotel enrichment failed:", err);
     }
   }
 
-  const { error: activitiesError } = await supabase.from("activities").insert(
-    parsed.activities.map((a, i) => ({ ...a, destination_id: destinationId, sort_order: i + 1 }))
-  );
-  if (activitiesError) {
-    console.error("[build-destination] activities insert failed:", activitiesError.message);
-  } else {
-    counts.activities = parsed.activities.length;
-  }
-
-  if (parsed.temples.length > 0) {
-    const { error: templesError } = await supabase.from("temples").insert(
-      parsed.temples.map((t, i) => ({ ...t, destination_id: destinationId, sort_order: i + 1 }))
+  try {
+    const { error } = await supabase.from("activities").insert(
+      parsed.activities.map((a, i) => ({ ...a, destination_id: destinationId, sort_order: i + 1 }))
     );
-    if (templesError) {
-      console.error("[build-destination] temples insert failed:", templesError.message);
-    } else {
-      counts.temples = parsed.temples.length;
+    if (error) throw new Error(error.message);
+    results.activities = { count: parsed.activities.length };
+  } catch (err) {
+    console.error("[build-destination] activities insert failed:", err);
+    results.activities = { error: errorMessage(err) };
+  }
+
+  try {
+    if (parsed.temples.length > 0) {
+      const { error } = await supabase.from("temples").insert(
+        parsed.temples.map((t, i) => ({ ...t, destination_id: destinationId, sort_order: i + 1 }))
+      );
+      if (error) throw new Error(error.message);
+      results.temples = { count: parsed.temples.length };
     }
+  } catch (err) {
+    console.error("[build-destination] temples insert failed:", err);
+    results.temples = { error: errorMessage(err) };
   }
 
-  const { error: howToReachError } = await supabase.from("how_to_reach").insert(
-    parsed.how_to_reach.map((r) => ({ ...r, destination_id: destinationId }))
-  );
-  if (howToReachError) {
-    console.error("[build-destination] how_to_reach insert failed:", howToReachError.message);
-  } else {
-    counts.howToReach = parsed.how_to_reach.length;
+  try {
+    const { error } = await supabase.from("how_to_reach").insert(
+      parsed.how_to_reach.map((r) => ({ ...r, destination_id: destinationId }))
+    );
+    if (error) throw new Error(error.message);
+    results.howToReach = { count: parsed.how_to_reach.length };
+  } catch (err) {
+    console.error("[build-destination] how_to_reach insert failed:", err);
+    results.howToReach = { error: errorMessage(err) };
   }
 
-  // Fire-and-forget: don't make the admin wait on photo lookups for a
-  // destination that's already fully built and usable.
-  syncPhotosForDestination(destinationId, name, supabase).catch((err) =>
-    console.error("[build-destination] photo sync failed:", err)
-  );
+  try {
+    results.photos = await syncPhotosForDestination(destinationId, name, supabase);
+  } catch (err) {
+    console.error("[build-destination] photo sync failed:", err);
+    results.photos = { error: errorMessage(err) };
+  }
+
+  const partialBuild = Object.values(results).some((r) => "error" in r);
 
   return NextResponse.json({
     success: true,
-    slug,
     destinationId,
-    counts,
+    slug,
+    results,
     places_enriched: placesEnriched,
-    photoSyncStarted: true,
+    partialBuild,
   });
 }

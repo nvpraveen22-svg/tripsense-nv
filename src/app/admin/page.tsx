@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
+  AlertTriangle,
   CheckCircle2,
   Circle,
   ImageIcon,
@@ -38,16 +39,31 @@ const STEPS = [
   "Done!",
 ];
 
+type BuildStepResult = { count: number } | { error: string };
+
 interface BuildResult {
   slug: string;
   destinationId: string;
-  counts: {
-    attractions: number;
-    hotels: number;
-    activities: number;
-    howToReach: number;
-    temples: number;
+  results: {
+    attractions: BuildStepResult;
+    hotels: BuildStepResult;
+    activities: BuildStepResult;
+    howToReach: BuildStepResult;
+    temples: BuildStepResult;
+    photos: { attraction_photos: number; temple_photos: number } | { error: string };
   };
+  partialBuild: boolean;
+}
+
+function StepBadge({ label, step }: { label: string; step: BuildStepResult }) {
+  if ("error" in step) {
+    return <Badge variant="destructive">{label} failed</Badge>;
+  }
+  return (
+    <Badge variant="secondary">
+      {step.count} {label}
+    </Badge>
+  );
 }
 
 interface SyncResult {
@@ -437,16 +453,44 @@ export default function AdminPage() {
       )}
 
       {result && (
-        <Alert>
-          <CheckCircle2 className="size-4" />
-          <AlertTitle>{name} is live</AlertTitle>
+        <Alert
+          className={cn(
+            result.partialBuild &&
+              "border-amber-300 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-500/10"
+          )}
+        >
+          {result.partialBuild ? (
+            <AlertTriangle className="size-4 text-amber-600 dark:text-amber-400" />
+          ) : (
+            <CheckCircle2 className="size-4" />
+          )}
+          <AlertTitle className={cn(result.partialBuild && "text-amber-800 dark:text-amber-400")}>
+            {result.partialBuild
+              ? `⚠️ ${name} created with partial data`
+              : `✅ ${name} built successfully!`}
+          </AlertTitle>
           <AlertDescription className="flex flex-col gap-3">
+            {result.partialBuild && (
+              <p className="text-amber-800 dark:text-amber-400">
+                Some sections had errors — use Sync Photos & Videos below to fill in missing
+                content.
+              </p>
+            )}
             <div className="flex flex-wrap gap-1.5">
-              <Badge variant="secondary">{result.counts.attractions} attractions</Badge>
-              <Badge variant="secondary">{result.counts.hotels} hotels</Badge>
-              <Badge variant="secondary">{result.counts.activities} activities</Badge>
-              <Badge variant="secondary">{result.counts.howToReach} how-to-reach</Badge>
-              <Badge variant="secondary">{result.counts.temples} temples</Badge>
+              <StepBadge label="attractions" step={result.results.attractions} />
+              <StepBadge label="hotels" step={result.results.hotels} />
+              <StepBadge label="activities" step={result.results.activities} />
+              <StepBadge label="how-to-reach" step={result.results.howToReach} />
+              <StepBadge label="temples" step={result.results.temples} />
+              {"error" in result.results.photos ? (
+                <Badge variant="destructive">photos failed</Badge>
+              ) : (
+                <Badge variant="secondary">
+                  {result.results.photos.attraction_photos +
+                    result.results.photos.temple_photos}{" "}
+                  photos
+                </Badge>
+              )}
             </div>
             <Link
               href={`/destination/${result.slug}`}
