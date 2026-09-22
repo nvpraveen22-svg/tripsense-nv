@@ -14,10 +14,12 @@ function sleep(ms: number) {
 }
 
 export const runtime = "nodejs";
-// Photo sync (Google Places + Unsplash, one request per attraction/temple
-// with a 600ms pace) now runs inline so its counts can be reported in the
-// response, so this needs the same headroom as sync-media's 300s.
-export const maxDuration = 300;
+// generateContentWithRetry's worst case is ~310s on its own (6 retries with
+// a 20s per-attempt cap, see gemini-with-retry.ts), and photo sync (Google
+// Places + Unsplash, one request per attraction/temple at a 600ms pace) now
+// runs inline after that so its counts can be reported in the response —
+// give this generous headroom for both.
+export const maxDuration = 480;
 
 // gemini-2.0-flash is retired for this API key; gemini-3.6-flash is the
 // model already proven working across this project's Gemini routes.

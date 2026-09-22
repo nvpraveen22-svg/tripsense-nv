@@ -1,6 +1,17 @@
-import type { GenerateContentResult, GenerativeModel } from "@google/generative-ai";
+import {
+  GoogleGenerativeAIAbortError,
+  type GenerateContentResult,
+  type GenerativeModel,
+} from "@google/generative-ai";
 
 const RETRY_DELAYS_MS = [5000, 10000, 20000, 30000, 45000, 60000];
+
+// Confirmed live 2026-09-22: a hung/overloaded Gemini request can sit with
+// zero bytes back for 90s+ with no error at all (not even a slow 503) — so
+// without a hard per-attempt cutoff, one bad attempt can silently burn the
+// entire retry budget. This aborts a single attempt so it counts as a
+// retryable failure instead of an unbounded hang.
+const PER_ATTEMPT_TIMEOUT_MS = 20000;
 
 export const GEMINI_OVERLOAD_MESSAGE =
   "Gemini AI is experiencing high demand right now. Please wait a few minutes and try again.";
@@ -16,7 +27,11 @@ export class GeminiOverloadedError extends Error {
 // went through (GoogleGenerativeAIFetchError#status/statusText/errorDetails)
 // — checking that directly is more reliable than regexing the message, which
 // is what we fall back to for errors that never got that far (e.g. network).
-function isOverloadedError(err: unknown): boolean {
+// A GoogleGenerativeAIAbortError means our own PER_ATTEMPT_TIMEOUT_MS fired
+// (or a caller-supplied signal did) — treat that the same as an overload,
+// since in practice that's what a silent hang has turned out to mean.
+function isRetryableError(err: unknown): boolean {
+  if (err instanceof GoogleGenerativeAIAbortError) return true;
   const status = (err as { status?: number } | undefined)?.status;
   if (status === 503) return true;
   const message = err instanceof Error ? err.message : String(err);
@@ -50,14 +65,18 @@ function sleep(ms: number): Promise<void> {
 }
 
 /**
- * Calls model.generateContent(prompt), retrying on 503/overload errors with
- * exponential backoff (5s, 10s, 20s, 30s, 45s, 60s — 6 retries, ~170s total).
- * Non-overload errors are rethrown as-is. If all retries are exhausted,
- * throws GeminiOverloadedError with the last error attached as `cause`.
+ * Calls model.generateContent(prompt), retrying on 503/overload/timeout
+ * errors with exponential backoff (5s, 10s, 20s, 30s, 45s, 60s — 6 retries,
+ * ~170s of sleep total). Each individual attempt is capped at
+ * PER_ATTEMPT_TIMEOUT_MS so a hung request can't silently consume the whole
+ * budget on its own. Non-retryable errors are rethrown as-is. If all
+ * retries are exhausted, throws GeminiOverloadedError with the last error
+ * attached as `cause`.
  *
- * Callers with a route-level timeout must give this enough headroom (the
- * worst case is ~170s of sleep plus however long each attempt itself takes)
- * — see maxDuration on the routes that use this.
+ * Callers with a route-level timeout must give this enough headroom: worst
+ * case is (RETRY_DELAYS_MS.length + 1) * PER_ATTEMPT_TIMEOUT_MS of attempt
+ * time, plus RETRY_DELAYS_MS's ~170s of sleep, plus whatever the caller does
+ * afterward — see maxDuration on the routes that use this.
  */
 export async function generateContentWithRetry(
   model: GenerativeModel,
@@ -66,18 +85,19 @@ export async function generateContentWithRetry(
 ): Promise<GenerateContentResult> {
   for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
     try {
-      return await model.generateContent(prompt);
+      return await model.generateContent(prompt, { timeout: PER_ATTEMPT_TIMEOUT_MS });
     } catch (err) {
-      if (!isOverloadedError(err)) throw err;
+      if (!isRetryableError(err)) throw err;
 
       if (attempt === RETRY_DELAYS_MS.length) {
-        console.error(`${logPrefix} exhausted all retries (overloaded):`, err);
+        console.error(`${logPrefix} exhausted all retries (overloaded/timed out):`, err);
         throw new GeminiOverloadedError(err);
       }
 
       const delay = RETRY_DELAYS_MS[attempt];
+      const reason = err instanceof GoogleGenerativeAIAbortError ? "timed out" : "overloaded";
       console.error(
-        `${logPrefix} attempt ${attempt + 1} failed (overloaded), retrying in ${delay}ms:`,
+        `${logPrefix} attempt ${attempt + 1} failed (${reason}), retrying in ${delay}ms:`,
         err
       );
       await sleep(delay);

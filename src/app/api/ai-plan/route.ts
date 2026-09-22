@@ -8,9 +8,10 @@ import {
 } from "@/lib/gemini-with-retry";
 
 export const runtime = "nodejs";
-// Retry backoff in generateContentWithRetry can sleep up to ~170s across its
-// 6 attempts before giving up, so this needs more than the platform default.
-export const maxDuration = 300;
+// generateContentWithRetry's worst case is ~310s (6 retries, each capped at
+// 20s, plus ~170s of backoff sleep) before giving up — well over the
+// platform default.
+export const maxDuration = 400;
 
 const MODEL_NAME = "gemini-3.6-flash";
 
